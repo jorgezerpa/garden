@@ -11,40 +11,42 @@ export default function Home() {
   if (!mounted) return null
 
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
-  console.log(theme)
 
   return (
     <div className="min-h-screen transition-colors duration-300 bg-slate-100 dark:bg-[#1a1f2b] text-slate-800 dark:text-slate-200 p-4 md:p-6 flex flex-col gap-4 font-sans">
       
       {/* --- Header / Top Bar --- */}
       <header className="flex items-center justify-between bg-white dark:bg-[#252b39] p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full">
           {/* Logo Placeholder */}
           <div className="w-8 h-8 bg-green-500 rounded-md" />
           <h1 className="font-bold text-lg hidden sm:block">Sales Garden</h1>
         </div>
 
-        <div className="flex items-center gap-6">
-          <div className="hidden md:flex flex-col items-end text-sm">
-            <span className="opacity-70">Welcome, <span className="font-semibold text-green-500">Sarah</span></span>
-            <span className="text-xs opacity-50">Wednesday, April 24</span>
+        <div className="flex flex-col items-center text-sm w-full justify-center text-center md:text-left">
+          <span className="block opacity-70">Welcome, <span className="font-semibold text-green-500">Sarah</span></span>
+        </div>
+
+        <div className="flex items-center justify-end gap-6 w-full">
+          <div className='hidden md:flex justify-center items-center'>
+            <span className="text-sm text-center md:text-left opacity-60">Wednesday, April 24</span>
+            <span className='font-light text-xl px-1'>|</span>
+            <span className='text-sm pr-1 opacity-60'>In Block:</span>
+            <span className='text-sm font-bold'>9:30 - 11:30 </span>
           </div>
-          
           <button 
             onClick={toggleTheme}
             className="p-2 rounded-lg bg-slate-200 dark:bg-slate-700 hover:ring-2 ring-green-400 transition-all"
           >
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
-
-          {/* Burger Menu (Mobile Only) */}
-          <button className="md:hidden p-2 bg-slate-200 dark:bg-slate-700 rounded-lg">
-            <div className="w-6 h-0.5 bg-current mb-1"></div>
-            <div className="w-6 h-0.5 bg-current mb-1"></div>
-            <div className="w-6 h-0.5 bg-current"></div>
-          </button>
         </div>
       </header>
+
+      <div className='mb-5 flex flex-col md:hidden justify-center items-center w-full bg-white dark:bg-[#252b39] p-1 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700'>
+        <span className="text-sm text-center opacity-60">Wednesday, April 24</span>
+        <span className='text-sm '>In Block: <span className='text-sm font-bold'>9:30 - 11:30 </span></span>
+      </div>
 
       {/* --- Main Content Grid --- */}
       <main className="flex flex-col lg:flex-row gap-6 flex-1">
