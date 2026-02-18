@@ -1,0 +1,10 @@
+'use client'
+import { ThemeProvider } from 'next-themes'
+
+export const MainProviders = ({children}:{ children: React.ReactNode }) => {
+    return (
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} >
+            {children}
+        </ThemeProvider>
+    )
+}
