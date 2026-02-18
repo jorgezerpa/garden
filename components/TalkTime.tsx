@@ -1,55 +1,126 @@
+import { useState } from 'react';
+
 export function TalkTime() {
+  const [progress, setProgress] = useState(80); 
+
+  const radius = 127;
+  const circumference = 2 * Math.PI * radius;
+  const gapSize = 6;
+  const segmentCount = 9;
+  const segmentLength = (circumference - (segmentCount * gapSize)) / segmentCount;
+  
+  const microLineHeight = 18;
+  const microLineCount = 8;
+  const microDashWidth = 2;
+  const microGapWidth = (segmentLength / microLineCount) - microDashWidth;
+  const microDashArray = `${microDashWidth} ${microGapWidth}`;
+
+  const hue = (progress / 100) * 120;
+  const activeColor = getActiveColor(progress);
+  const offset = circumference - (progress / 100) * circumference;
+
+  
+  function getActiveColor(progress:number): string {
+    const segmentColors = [
+      '#00C950'
+    ];
+    
+    return segmentColors[0]
+}
 
   return (
-        <div className="bg-white dark:bg-[#252b39]/80 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-[0_0_15px_rgba(0,0,0,0.4)] rounded-2xl p-6 flex-[2.5] min-h-[400px] flex flex-col items-center justify-center relative overflow-hidden transition-all duration-500">
+    <div className="overflow-hidden bg-white dark:bg-[#252b39]/80 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-sm rounded-2xl p-8 flex-[2.5] min-h-[450px] flex flex-col items-center justify-between relative transition-all duration-500 text-slate-800 dark:text-white">
       
-            {/* 1. Atmospheric Overlays */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
-            {/* The "Golden Dust" sparkle effect from the image */}
-            <div className="absolute top-1/2 right-10 w-32 h-32 bg-yellow-500/10 blur-[50px] rounded-full pointer-events-none" />
+      {/* Top Header */}
+      <div className="text-center z-10">
+        <h3 className="text-base uppercase tracking-[0.2em] opacity-60 font-medium">
+          Talk Time Today
+        </h3>
+      </div>
 
-            {/* 2. Top Label */}
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500 mb-8 z-10">
-              Talk Time Today
-            </h3>
+      {/* Main Visual Container */}
+      <div className="relative w-[300px] h-[300px] flex items-center justify-center">
+        
+        {/* SVG Indicator */}
+        <svg 
+          width="300" height="300" viewBox="0 0 300 300" 
+          className="-rotate-90 filter drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]"
+        >
+          <defs>
+            <mask id="segment-mask">
+              <circle cx="150" cy="150" r={radius} stroke="white" strokeWidth="30" fill="none" strokeDasharray={`${segmentLength} ${gapSize}`} />
+            </mask>
+            <mask id="micro-lines-mask">
+              <circle cx="150" cy="150" r={radius} stroke="white" strokeWidth={microLineHeight} fill="none" strokeDasharray={microDashArray} />
+            </mask>
+          </defs>
 
-            {/* 3. The Main Glowing Ring Container */}
-            <div className="relative w-72 h-72 flex items-center justify-center">
-              
-              {/* Outer Static Ring */}
-              <div className="absolute inset-0 rounded-full border border-slate-200 dark:border-white/5 shadow-[inset_0_0_40px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_0_60px_rgba(0,0,0,0.3)]" />
-              
-              {/* The Glowing Progress Segment (Represented as a thick border with glow) */}
-              <div className="absolute inset-2 rounded-full border-[10px] border-transparent border-t-green-500 border-r-green-400 dark:drop-shadow-[0_0_15px_rgba(34,197,94,0.6)] rotate-45" />
+          {/* Thin Outer Border */}
+          <circle cx="150" cy="150" r="149" stroke="currentColor" strokeWidth="1" fill="none" className="opacity-10" />
 
-              {/* Inner Content */}
-              <div className="text-center z-10">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-green-500 dark:drop-shadow-[0_0_8px_rgba(34,197,94,0.4)] mb-2 block">
-                  On Fire!
-                </span>
-                <h2 className="text-5xl font-mono tracking-tighter text-slate-800 dark:text-white dark:drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
-                  02:15:30
-                </h2>
-                {/* Leaves/Icon placeholder */}
-                <div className="mt-4 flex justify-center opacity-40">
-                  <div className="w-6 h-6 bg-slate-400 dark:bg-slate-600 rounded-full blur-[1px]" />
-                </div>
-              </div>
+          {/* Active Progress */}
+          <circle 
+            cx="150" cy="150" r={radius} 
+            stroke={activeColor} strokeWidth="30" fill="none"
+            mask="url(#segment-mask)"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            className="transition-all duration-700 ease-in-out"
+          />
+
+          {/* Micro-Lines */}
+          <g mask="url(#segment-mask)">
+            <circle 
+              cx="150" cy="150" r={radius} 
+              stroke="white" strokeWidth={microLineHeight} fill="none"
+              mask="url(#micro-lines-mask)"
+              strokeDasharray={circumference} strokeDashoffset={offset}
+              className="transition-all duration-700 ease-in-out opacity-40"
+            />
+          </g>
+        </svg>
+
+        {/* Inner Circle Text */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center z-10">
+            <span className="text-[14px] font-semibold uppercase tracking-widest text-green-500 dark:drop-shadow-[0_0_8px_rgba(34,197,94,0.4)] mb-2 block">
+              On Fire!
+            </span>
+            <h2 className="text-4xl font-mono tracking-tighter text-slate-800 dark:text-white dark:drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
+              02:15:30
+            </h2>
+            {/* Leaves/Icon placeholder */}
+            <div className="mt-4 flex justify-center opacity-40">
+              <div className="w-6 h-6 bg-slate-400 dark:bg-slate-600 rounded-full blur-[1px]" />
             </div>
+          </div>
+        </div>
 
-            {/* 4. Bottom Stats (Calls vs Deep Calls) */}
-            <div className="flex w-full justify-between mt-10 px-4 z-10">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Calls:</span>
-                <span className="text-sm font-bold tabular-nums">26</span>
-              </div>
-              
-              <div className="flex items-center gap-2 border-l border-slate-200 dark:border-white/10 pl-6">
-                <div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_#f97316]" />
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Deep Calls:</span>
-                <span className="text-sm font-bold tabular-nums">8</span>
-              </div>
-            </div>
-          </div> 
+
+
+
+      </div>
+
+
+      {/* Bottom Stats Footer */}
+      <div className="w-full flex justify-between items-center px-4">
+        <div className="flex flex-col">
+          <span className="text-[10px] uppercase tracking-widest opacity-40">Calls</span>
+          <span className="text-xl font-medium">26</span>
+        </div>
+
+        {/* Small separator line */}
+        <div className="h-8 w-[1px] bg-white/10" />
+
+        <div className="flex flex-col items-end">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]" />
+            <span className="text-[10px] uppercase tracking-widest opacity-40">Deep Calls</span>
+          </div>
+          <span className="text-xl font-medium">8</span>
+        </div>
+      </div>
+      
+    </div>
   );
 }
