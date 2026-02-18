@@ -1,4 +1,5 @@
 'use client'
+import { TalkTime } from '@/components/TalkTime'
 import { useTheme } from 'next-themes'
 import { useState, useEffect } from 'react'
 
@@ -149,63 +150,16 @@ export default function Home() {
         {/* Middle Column */}
         <section className="flex flex-col gap-4 w-full lg:w-1/2">
           {/* --- Talk Time --- */}
-          <div className="bg-white dark:bg-[#252b39]/80 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-[0_0_15px_rgba(0,0,0,0.4)] rounded-2xl p-6 flex-[2.5] min-h-[400px] flex flex-col items-center justify-center relative overflow-hidden transition-all duration-500">
-      
-            {/* 1. Atmospheric Overlays */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
-            {/* The "Golden Dust" sparkle effect from the image */}
-            <div className="absolute top-1/2 right-10 w-32 h-32 bg-yellow-500/10 blur-[50px] rounded-full pointer-events-none" />
-
-            {/* 2. Top Label */}
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500 mb-8 z-10">
-              Talk Time Today
-            </h3>
-
-            {/* 3. The Main Glowing Ring Container */}
-            <div className="relative w-72 h-72 flex items-center justify-center">
-              
-              {/* Outer Static Ring */}
-              <div className="absolute inset-0 rounded-full border border-slate-200 dark:border-white/5 shadow-[inset_0_0_40px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_0_60px_rgba(0,0,0,0.3)]" />
-              
-              {/* The Glowing Progress Segment (Represented as a thick border with glow) */}
-              <div className="absolute inset-2 rounded-full border-[10px] border-transparent border-t-green-500 border-r-green-400 dark:drop-shadow-[0_0_15px_rgba(34,197,94,0.6)] rotate-45" />
-
-              {/* Inner Content */}
-              <div className="text-center z-10">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-green-500 dark:drop-shadow-[0_0_8px_rgba(34,197,94,0.4)] mb-2 block">
-                  On Fire!
-                </span>
-                <h2 className="text-5xl font-mono tracking-tighter text-slate-800 dark:text-white dark:drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
-                  02:15:30
-                </h2>
-                {/* Leaves/Icon placeholder */}
-                <div className="mt-4 flex justify-center opacity-40">
-                  <div className="w-6 h-6 bg-slate-400 dark:bg-slate-600 rounded-full blur-[1px]" />
-                </div>
-              </div>
-            </div>
-
-            {/* 4. Bottom Stats (Calls vs Deep Calls) */}
-            <div className="flex w-full justify-between mt-10 px-4 z-10">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Calls:</span>
-                <span className="text-sm font-bold tabular-nums">26</span>
-              </div>
-              
-              <div className="flex items-center gap-2 border-l border-slate-200 dark:border-white/10 pl-6">
-                <div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_#f97316]" />
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Deep Calls:</span>
-                <span className="text-sm font-bold tabular-nums">8</span>
-              </div>
-            </div>
-          </div>
+          <TalkTime />
 
           {/* --- streak tracker Section --- */}
-          <div className="bg-white dark:bg-[#252b39]/80 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-[0_0_15px_rgba(0,0,0,0.4)] rounded-2xl p-4 flex-1 min-h-[140px] relative overflow-hidden group transition-all duration-500">
+          <div className="bg-white dark:bg-[#252b39]/80 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-[0_0_15px_rgba(0,0,0,0.4)] rounded-2xl p-4 flex-1 min-h-[140px] relative  group transition-all duration-500">
             
             {/* 1. Atmospheric Glows (The "Meadow" Effect) */}
-            <div className="absolute inset-0 bg-gradient-to-t from-green-500/10 via-transparent to-transparent opacity-60 pointer-events-none" />
-            <div className="absolute -bottom-10 -left-10 w-48 h-24 bg-green-500/20 blur-[50px] rounded-full pointer-events-none group-hover:bg-green-500/30 transition-colors duration-700" />
+            <div className='absolute inset-0 overflow-hidden'>
+              <div className="absolute inset-0 bg-gradient-to-t from-green-500/10 via-transparent to-transparent opacity-60 pointer-events-none" />
+              <div className="absolute -bottom-10 -left-10 w-48 h-24 bg-green-500/20 blur-[50px] rounded-full pointer-events-none group-hover:bg-green-500/30 transition-colors duration-700" />
+            </div>
             
             {/* 2. Header Label with decorative lines */}
             <div className="relative z-10 flex items-center justify-center gap-3 mb-6">
@@ -247,6 +201,8 @@ export default function Home() {
             {/* 4. Tiny Decorative Glows (Sparkles) */}
             <div className="absolute bottom-4 right-12 w-1 h-1 bg-white rounded-full blur-[1px] animate-pulse opacity-30" />
             <div className="absolute bottom-6 right-20 w-1.5 h-1.5 bg-green-300 rounded-full blur-[2px] animate-pulse opacity-20" />
+
+            <ManualSeeding />
           </div>
         </section>
 
@@ -469,5 +425,75 @@ const CallBlock = ({ time, status }: CallBlockProps) => {
     </div>
   );
 };
+
+// -------------------------------
+// MANUAL SEEDING
+// -------------------------------
+const ManualSeeding = () => {
+  return (
+    <>
+          {/* --- High-Visibility Manual Seeding Bar --- */}
+      <div className="max-w-2xl mx-auto relative top-[20%] mt-5 md:mt-0">
+        <div className={`
+          /* Background & Glass - Darker and less transparent for visibility */
+          bg-white/95 dark:bg-[#1e2330] 
+          backdrop-blur-2xl
+          
+          /* The "Pop" - Thick saturated border and a neon perimeter glow */
+          border-2 border-green-500/30 dark:border-green-400/20
+          shadow-[0_0_30px_rgba(34,197,94,0.15)] dark:shadow-[0_0_50px_rgba(0,0,0,0.6)]
+          
+          rounded-3xl p-4 flex items-center justify-between gap-4
+        `}>
+          
+          {/* Status Indicator (Left) */}
+          <div className="hidden sm:flex items-center gap-3 pr-4 border-r border-slate-200 dark:border-white/10">
+            <div className="relative">
+              <div className="w-3 h-3 bg-green-500 rounded-full animate-ping absolute inset-0 opacity-20" />
+              <div className="w-3 h-3 bg-green-500 rounded-full shadow-[0_0_8px_#22c55e]" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-green-600 dark:text-green-400 leading-none">
+                Live Seeding
+              </span>
+              <span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-bold mt-1">
+                Garden Active
+              </span>
+            </div>
+          </div>
+
+          {/* Buttons Container */}
+          <div className="flex-1 flex flex-col md:flex-row items-center gap-2 sm:gap-3">
+            
+            {/* Standard Seed */}
+            <button className="w-full md:w-auto flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-green-500/50 transition-all active:scale-90 group">
+              <div className="w-4 h-4 bg-slate-400/50 rounded-sm group-hover:bg-green-500 transition-colors" />
+              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Seed</span>
+            </button>
+
+            {/* Callback */}
+            <button className="w-full md:w-auto flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-blue-500/50 transition-all active:scale-90 group">
+              <div className="w-4 h-4 bg-slate-400/50 rounded-sm group-hover:bg-blue-500 transition-colors" />
+              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Callback</span>
+            </button>
+
+            {/* Connection */}
+            <button className="w-full md:w-auto flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-purple-500/50 transition-all active:scale-90 group">
+              <div className="w-4 h-4 bg-slate-400/50 rounded-sm group-hover:bg-purple-500 transition-colors" />
+              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Connect</span>
+            </button>
+
+            {/* Harvest (The main action) */}
+            <button className="w-full md:w-auto flex-[1.2] flex flex-col items-center justify-center gap-1 py-2 rounded-2xl bg-green-500 text-white shadow-lg shadow-green-500/40 hover:bg-green-400 transition-all active:scale-95">
+              <div className="w-4 h-4 bg-white/30 rounded-sm" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Harvest</span>
+            </button>
+
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
 
 
