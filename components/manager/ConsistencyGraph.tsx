@@ -92,7 +92,7 @@ export function ConsistencyGraph() {
         <div className="flex items-center gap-3">
           <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" />
           <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed">
-            <span className="text-slate-800 dark:text-white">Analysis:</span> Consistency is the "Real Product"[cite: 13, 184]. Use this to detect <span className="text-green-500">Declining Performance Early</span> [cite: 171] before a total burnout occurs.
+            <span className="text-slate-800 dark:text-white">Analysis:</span> Consistency is the "Real Product". Use this to detect <span className="text-green-500">Declining Performance Early</span> [cite: 171] before a total burnout occurs.
           </p>
         </div>
       </div>

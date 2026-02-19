@@ -1,240 +1,396 @@
-'use client'
-import React, { useState, useEffect } from 'react';
-import { useTheme } from 'next-themes';
+'use client';
+import React, { useState } from 'react';
 import { 
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, FunnelChart, Funnel, LabelList 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, 
+  Tooltip, ResponsiveContainer, AreaChart, Area 
 } from 'recharts';
-import { DailyActivityLineChart } from '@/components/manager/DailyActivityLineChart';
-import { PerBlockBarChart } from '@/components/manager/PerBlockBarChart';
-import { CallDurationHistogram } from '@/components/manager/CallsDurationHistogram';
-import { SeedHeatmap } from '@/components/manager/SeedsHeatmap';
-import { ConversionFunnelChart } from '@/components/manager/ConversionFunnelChart';
-import { ConsistencyGraph } from '@/components/manager/ConsistencyGraph';
 
 // --- Mock Data ---
-const weeklyData = [
-  { day: 'Mon', talkTime: 320, seeds: 45 },
-  { day: 'Tue', talkTime: 400, seeds: 52 },
-  { day: 'Wed', talkTime: 380, seeds: 48 },
-  { day: 'Thu', talkTime: 450, seeds: 61 },
-  { day: 'Fri', talkTime: 300, seeds: 38 },
+const performanceTrend = [
+  { day: 'Mon', talkTime: 120, seeds: 40 },
+  { day: 'Tue', talkTime: 150, seeds: 35 },
+  { day: 'Wed', talkTime: 180, seeds: 55 },
+  { day: 'Thu', talkTime: 140, seeds: 42 },
+  { day: 'Fri', talkTime: 210, seeds: 60 },
 ];
 
-const users = Array.from({ length: 24 }, (_, i) => ({
-  id: i,
-  name: `Agent ${i + 1}`,
-  email: `agent${i + 1}@garden.com`,
-  status: 'Active'
-}));
+const mockAgents = [
+  { 
+    id: 1, 
+    name: 'Alex Rivera', 
+    email: 'alex@garden.ai', 
+    hired: '2023-10-12', 
+    streak: 12, 
+    seeds: 450, 
+    status: 'active',
+    behavior: {
+      history: "Total: 4,280 calls | Lifetime Seed-to-Sale: 8.4%",
+      trends: "Consistency +12% vs last month | Avg Call length increasing",
+      strengths: "Block 2 (10:00-12:00) | Mid-week peak efficiency",
+      weaknesses: "Friday afternoons | High churn in 0-1 min bucket",
+      patterns: "High seed volume / Low callback ratio"
+    }
+  },
+  { 
+    id: 2, 
+    name: 'Jordan Smith', 
+    email: 'jordan@garden.ai', 
+    hired: '2024-01-05', 
+    streak: 5, 
+    seeds: 210, 
+    status: 'active',
+    behavior: {
+      history: "Total: 1,120 calls | Lifetime Seed-to-Sale: 6.2%",
+      trends: "Steady growth | Maintaining baseline targets",
+      strengths: "Morning blocks | High engagement on 5+ min calls",
+      weaknesses: "Low talk time on Mondays",
+      patterns: "Quality-focused / Slower seed logging pace"
+    }
+  },
+  { 
+    id: 3, 
+    name: 'Sarah Chen', 
+    email: 'sarah.c@garden.ai', 
+    hired: '2023-08-20', 
+    streak: 24, 
+    seeds: 890, 
+    status: 'active',
+    behavior: {
+      history: "Total: 8,400 calls | Lifetime Seed-to-Sale: 11.5%",
+      trends: "Elite consistency | Top 1% of the organization",
+      strengths: "All blocks | Exceptional 'Closing' window efficiency",
+      weaknesses: "None identified | Consistent across all buckets",
+      patterns: "Predictable, high-output mechanical consistency"
+    }
+  },
+  { 
+    id: 4, 
+    name: 'Marcus Thorne', 
+    email: 'm.thorne@garden.ai', 
+    hired: '2024-02-14', 
+    streak: 2, 
+    seeds: 85, 
+    status: 'active',
+    behavior: {
+      history: "Total: 340 calls | New Hire Probation",
+      trends: "Learning phase | Volatile daily talk time",
+      strengths: "High energy in Block 1 (08:00-10:00)",
+      weaknesses: "Drop-off in data entry (seeds) during Block 4",
+      patterns: "Inconsistent follow-through / High churn rate"
+    }
+  },
+  { 
+    id: 5, 
+    name: 'Elena Rodriguez', 
+    email: 'elena@garden.ai', 
+    hired: '2023-11-30', 
+    streak: 0, 
+    seeds: 320, 
+    status: 'paused',
+    behavior: {
+      history: "Total: 2,800 calls | Burnout Warning Signal",
+      trends: "Declining performance | -30% activity vs last week",
+      strengths: "Historically strong in late-afternoon blocks",
+      weaknesses: "Current high absenteeism | Broken streaks",
+      patterns: "Pattern suggests external burnout / Fatigue"
+    }
+  },
+  { 
+    id: 6, 
+    name: 'David Vance', 
+    email: 'dvance@garden.ai', 
+    hired: '2023-09-15', 
+    streak: 8, 
+    seeds: 512, 
+    status: 'active',
+    behavior: {
+      history: "Total: 5,100 calls | Solid Mid-Tier Performer",
+      trends: "Recovering from slump | Upward streak trend",
+      strengths: "Block 3 (13:00-15:00) | Mid-day focus",
+      weaknesses: "Slow starts in Block 1",
+      patterns: "Reactive behavior / Responds well to morning coaching"
+    }
+  },
+  { 
+    id: 7, 
+    name: 'Sasha Ivanov', 
+    email: 'sasha@garden.ai', 
+    hired: '2023-12-01', 
+    streak: 15, 
+    seeds: 440, 
+    status: 'active',
+    behavior: {
+      history: "Total: 3,900 calls | Seed Specialist",
+      trends: "Stable | High data-entry compliance",
+      strengths: "Consistently hits seed targets before 14:00",
+      weaknesses: "Low talk-to-lead conversion",
+      patterns: "Efficient data processor / Needs closing support"
+    }
+  },
+  { 
+    id: 8, 
+    name: 'Liam O’Connor', 
+    email: 'liam.oc@garden.ai', 
+    hired: '2024-03-01', 
+    streak: 4, 
+    seeds: 115, 
+    status: 'active',
+    behavior: {
+      history: "Total: 450 calls | Emerging Talent",
+      trends: "Rapidly increasing talk time",
+      strengths: "Block 4 (15:00-17:00) | Strong closer",
+      weaknesses: "High seed churn | Needs admin training",
+      patterns: "Aggressive sales style / Low admin discipline"
+    }
+  },
+  { 
+    id: 9, 
+    name: 'Chloe Baptiste', 
+    email: 'chloe@garden.ai', 
+    hired: '2023-07-10', 
+    streak: 1, 
+    seeds: 920, 
+    status: 'active',
+    behavior: {
+      history: "Total: 9,200 calls | Senior Representative",
+      trends: "Cyclical consistency | High performance bursts",
+      strengths: "Expert-level conversation management",
+      weaknesses: "Frequent streak resets | Needs flexibility",
+      patterns: "High value / Medium reliability pattern"
+    }
+  },
+  { 
+    id: 10, 
+    name: 'Musa Abebe', 
+    email: 'musa.a@garden.ai', 
+    hired: '2024-01-20', 
+    streak: 9, 
+    seeds: 280, 
+    status: 'active',
+    behavior: {
+      history: "Total: 1,800 calls | Dependable Associate",
+      trends: "Consistent 2% weekly growth",
+      strengths: "Balanced performance across all blocks",
+      weaknesses: "Short call average is slightly high",
+      patterns: "Steady progress / Low risk profile"
+    }
+  }
+];
 
-export default function AdminStats() {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  const [viewMode, setViewMode] = useState<'group' | 'user'>('group');
-  const [timeRange, setTimeRange] = useState('Last 7 Days');
-  const [searchQuery, setSearchQuery] = useState('');
-
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
-
-  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
+export default function AgentsManagement() {
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [pageSize, setPageSize] = useState(10);
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-[#0f1219] p-4 md:p-8 transition-colors duration-500 font-sans text-slate-800 dark:text-slate-200">
+    <div className="space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
-      {/* --- 1. Header & Primary Navigation --- */}
-      <header className="flex flex-col gap-6 mb-8">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-black tracking-tight uppercase">Performance Intelligence</h1>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-1">Behavioral Analytics Engine [cite: 5]</p>
-          </div>
-          <button 
-            onClick={toggleTheme}
-            className="w-10 h-10 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shadow-sm hover:scale-105 transition-all"
-          >
-            {theme === 'dark' ? '☀️' : '🌙'}
-          </button>
-        </div>
-
-        {/* --- 2. Dual Selectors Section --- */}
-        <div className="flex flex-wrap gap-4 items-center bg-white dark:bg-[#1e2330]/80 backdrop-blur-xl p-4 rounded-[2rem] border border-slate-200 dark:border-white/10 shadow-sm">
-          {/* View Mode Toggle */}
-          <div className="flex bg-slate-100 dark:bg-black/20 p-1 rounded-xl">
-            {(['group', 'user'] as const).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setViewMode(mode)}
-                className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                  viewMode === mode ? 'bg-white dark:bg-white/10 text-green-500 shadow-sm' : 'text-slate-400'
-                }`}
-              >
-                {mode === 'group' ? 'General Group' : 'Per User'}
-              </button>
-            ))}
-          </div>
-
-          <div className="h-6 w-px bg-slate-200 dark:bg-white/10 hidden md:block" />
-
-          {/* Time Range Selector [cite: 81, 84] */}
-          <div className="flex gap-2">
-            {['Today', 'Last 7 Days', 'Last 30 Days'].map((range) => (
-              <button
-                key={range}
-                onClick={() => setTimeRange(range)}
-                className={`px-3 py-2 rounded-xl text-[9px] font-bold uppercase tracking-wider transition-all ${
-                  timeRange === range ? 'text-green-500 border border-green-500/30 bg-green-500/5' : 'text-slate-400 border border-transparent'
-                }`}
-              >
-                {range}
-              </button>
-            ))}
-          </div>
-        </div>
-      </header>
-
-      {/* --- 3. Per-User Selection Interface --- */}
-      {viewMode === 'user' && (
-        <section className="mb-8 space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
-          <div className="relative max-w-md">
+      {/* 1. Header & Search Bar */}
+      <div className="flex flex-col lg:flex-row justify-between gap-6 items-end">
+        <div className="w-full lg:max-w-md">
+          <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Search</label>
+          <div className="relative">
             <input 
-              type="text"
-              placeholder="Search user by name or email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white dark:bg-[#1e2330] border border-slate-200 dark:border-white/10 rounded-2xl px-12 py-4 text-sm outline-none focus:border-green-500/50 transition-all shadow-sm"
+              type="text" 
+              placeholder="Filter by name or email..." 
+              className="w-full bg-white dark:bg-[#1e2330] border border-slate-200 dark:border-white/10 rounded-2xl px-5 py-4 text-xs font-bold focus:ring-2 focus:ring-green-500 outline-none transition-all shadow-sm"
             />
-            <span className="absolute left-5 top-1/2 -translate-y-1/2 opacity-30">🔍</span>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-30">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </div>
           </div>
+        </div>
 
-          {/* 3-Row Horizontal Scroll Grid  */}
-          <div className="bg-slate-200/30 dark:bg-black/20 rounded-[2.5rem] p-6">
-            <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide snap-x">
-              <div className="grid grid-rows-3 grid-flow-col gap-4">
-                {users.filter(u => u.name.toLowerCase().includes(searchQuery.toLowerCase())).map((user) => (
-                  <div key={user.id} className="w-64 snap-start bg-white dark:bg-[#1e2330] p-4 rounded-[1.5rem] border border-slate-200 dark:border-white/10 shadow-sm hover:border-green-500/50 transition-all group">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex flex-col">
-                        <span className="text-xs font-black text-slate-800 dark:text-white truncate">{user.name}</span>
-                        <span className="text-[10px] text-slate-400 truncate">{user.email}</span>
-                      </div>
-                      <input type="checkbox" className="accent-green-500 w-4 h-4 rounded-md" />
-                    </div>
-                    <div className="mt-2 pt-2 border-t border-slate-50 dark:border-white/5 flex justify-between items-center">
-                      <span className="text-[8px] font-black uppercase text-green-500 tracking-widest">Select Agent</span>
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                    </div>
-                  </div>
-                ))}
+        {/* 2. Advanced Filters */}
+        <div className="flex flex-wrap gap-4 items-center">
+          <select className="bg-white dark:bg-[#1e2330] dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest outline-none">
+            <option>Min Streak: All</option>
+            <option>5+ Days</option>
+            <option>10+ Days</option>
+          </select>
+          <input type="date" className="bg-white dark:bg-[#1e2330] dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest outline-none" />
+        </div>
+      </div>
+
+      {/* 3. Agent Cards List */}
+      <div className="space-y-4">
+        {mockAgents.map((agent) => (
+          <div key={agent.id} className="bg-white dark:bg-[#1e2330] rounded-[2rem] border border-slate-200 dark:border-white/10 overflow-hidden transition-all duration-500 shadow-sm">
+            
+            {/* Visible Part */}
+            <div className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-500 font-black text-xl">
+                  {agent.name.charAt(0)}
+                </div>
+                <div>
+                  <h4 className="text-sm font-black dark:text-white leading-none">{agent.name}</h4>
+                  <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">{agent.email}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+                <div>
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Hired</span>
+                  <span className="text-[11px] font-bold dark:text-slate-200">{agent.hired}</span>
+                </div>
+                <div>
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Streak</span>
+                  <span className={`text-[11px] font-black ${agent.streak > 10 ? 'text-green-500' : 'text-amber-500'}`}>{agent.streak} Days</span>
+                </div>
+                <div className="hidden md:block">
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Status</span>
+                  <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase ${agent.status === 'active' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>{agent.status}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-slate-400 hover:text-amber-500">
+                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </button>
+                <button 
+                  onClick={() => setExpandedId(expandedId === agent.id ? null : agent.id)}
+                  className="px-5 py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[9px] font-black uppercase tracking-widest hover:bg-green-500 dark:hover:bg-green-500 dark:hover:text-white transition-all shadow-md"
+                >
+                  {expandedId === agent.id ? 'Hide Details' : 'See Details'}
+                </button>
               </div>
             </div>
-          </div>
-        </section>
-      )}
 
-      {/* --- 4. Data Dashboard (KPI Overview) [cite: 93, 94] --- */}
-      <main className="space-y-6">
-
-        {/* SUMMARY  */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
-            {[
-                { 
-                label: 'Total Talk Time', 
-                val: '184h 12m', 
-                sub: 'Effective duration ',
-                color: 'bg-green-500' 
-                },
-                { 
-                label: 'Total Calls', 
-                val: '2,840', 
-                sub: 'Logged sessions ',
-                color: 'bg-emerald-500' 
-                },
-                { 
-                label: 'Total Seeds', 
-                val: '1,240', 
-                sub: 'Initial logging ',
-                color: 'bg-lime-500' 
-                },
-                { 
-                label: 'Total Leads', 
-                val: '412', 
-                sub: 'Qualified interest ',
-                color: 'bg-green-400' 
-                },
-                { 
-                label: 'Total Sales', 
-                val: '86', 
-                sub: 'Closed conversions ',
-                color: 'bg-emerald-600' 
-                },
-                { 
-                label: 'Conversion Rate', 
-                val: '12.4%', 
-                sub: 'Seed-to-Sale [cite: 55]',
-                color: 'bg-green-600' 
-                },
-                { 
-                label: 'Avg Call Duration', 
-                val: '4m 32s', 
-                sub: 'Baseline productivity ',
-                color: 'bg-lime-600' 
-                },
-            ].map((stat, i) => (
-                <div key={i} className="bg-white dark:bg-[#1e2330] p-5 rounded-[2rem] border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-                {/* Dynamic Background Glow */}
-                <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition-opacity">
-                    <div className={`w-12 h-12 ${stat.color} rounded-full blur-xl`} />
-                </div>
-                
-                {/* KPI Label */}
-                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 relative z-10 block mb-1">
-                    {stat.label}
-                </span>
-                
-                {/* KPI Value */}
-                <div className="text-xl font-black tracking-tighter text-slate-800 dark:text-white relative z-10">
-                    {stat.val}
-                </div>
-                
-                {/* Subtext with Citation Reference */}
-                <p className="text-[7px] text-slate-400 uppercase mt-2 tracking-widest font-bold opacity-80 relative z-10">
-                    {stat.sub}
-                </p>
-
-                {/* Decorative Bottom Bar */}
-                <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 ${stat.color} opacity-20 rounded-t-full group-hover:w-16 transition-all`} />
-                </div>
-            ))}
+{/* Dropdown Section: Behavioral Intelligence */}
+{expandedId === agent.id && (
+  <div className="px-6 pb-8 pt-4 border-t border-slate-100 dark:border-white/5 animate-in slide-in-from-top-4 duration-500">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      {/* Left: Performance Summary List */}
+      <div className="lg:col-span-1 space-y-4">
+        <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Behavioral Intelligence</h5>
+        
+        <ul className="space-y-4">
+          <li className="flex items-start gap-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />
+            <div>
+              <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Performance History</p>
+              <p className="text-[11px] font-bold dark:text-slate-200">Total: 4,280 calls | Lifetime Seed-to-Sale: 8.4%</p>
             </div>
+          </li>
+          
+          <li className="flex items-start gap-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+            <div>
+              <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Historical Trends</p>
+              <p className="text-[11px] font-bold dark:text-slate-200">Consistency +12% vs last month | Avg Call length increasing</p>
+            </div>
+          </li>
 
-        {/* Daily Activity Line Chart */}
-        <DailyActivityLineChart />
+          <li className="flex items-start gap-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0" />
+            <div>
+              <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Strength Periods</p>
+              <p className="text-[11px] font-bold dark:text-slate-200">Block 2 (10:00-12:00) | Mid-week peak efficiency</p>
+            </div>
+          </li>
 
-        {/* Per block bar chart */}
-        <PerBlockBarChart />
+          <li className="flex items-start gap-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
+            <div>
+              <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Weak Periods</p>
+              <p className="text-[11px] font-bold dark:text-slate-200">Friday afternoons | High churn in 0-1 min duration bucket</p>
+            </div>
+          </li>
 
-        {/* Call duration histogram */}
-        <CallDurationHistogram />
+          <li className="flex items-start gap-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 flex-shrink-0" />
+            <div>
+              <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Behavioral Patterns</p>
+              <p className="text-[11px] font-bold dark:text-slate-200">High seed volume / Low callback ratio (Potential quantity over quality)</p>
+            </div>
+          </li>
+        </ul>
+      </div>
 
-        {/* Seeds heatmap */}
-        <SeedHeatmap />
+      {/* Right: Soft Chart Visual (Takes 2 columns) */}
+      <div className="lg:col-span-2 bg-slate-50 dark:bg-black/20 rounded-[2rem] p-6 border border-slate-100 dark:border-white/5">
+        <div className="flex justify-between items-center mb-6">
+          <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">30-Day Activity Overlay</h5>
+          <div className="flex gap-4 text-[8px] font-black uppercase tracking-widest">
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-green-500" /> Seeds</div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-slate-400" /> Talk Time</div>
+          </div>
+        </div>
+        
+        <div className="h-56 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={performanceTrend}>
+              <defs>
+                <linearGradient id="colorSeeds" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.1}/>
+                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} />
+              <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: '700', fill: '#94a3b8'}} />
+              <YAxis hide />
+              <Tooltip 
+                contentStyle={{backgroundColor: '#1e2330', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '10px'}}
+                itemStyle={{color: '#fff'}}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="seeds" 
+                stroke="#22c55e" 
+                strokeWidth={3} 
+                fillOpacity={1} 
+                fill="url(#colorSeeds)" 
+                activeDot={{ r: 6, strokeWidth: 0 }}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="talkTime" 
+                stroke="#94a3b8" 
+                strokeWidth={2} 
+                strokeDasharray="5 5"
+                fill="transparent" 
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
-        {/* Convertion funnel Chart */}
-        <ConversionFunnelChart />
 
-        {/* Consistency graph */}
-        {/* Only available when 1 user is selected */}
-        <ConsistencyGraph />
+          </div>
+        ))}
+      </div>
 
-      </main>
-
-      {/* Footer Meta [cite: 181] */}
-      <footer className="mt-8 flex justify-between px-4 opacity-30 text-[9px] font-black uppercase tracking-widest">
-        <span>Performance Intelligence Layer v1.0 [cite: 184]</span>
-        <span>Operational Integrity: High</span>
-      </footer>
+      {/* 4. Pagination & Page Size */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-10 border-t border-slate-200 dark:border-white/5">
+        <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
+          <span>Show rows:</span>
+          {[10, 25, 50].map(size => (
+            <button 
+              key={size}
+              onClick={() => setPageSize(size)}
+              className={`hover:text-green-500 transition-colors ${pageSize === size ? 'text-green-500' : ''}`}
+            >
+              {size}
+            </button>
+          ))}
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <button className="w-10 h-10 rounded-xl bg-white dark:bg-[#1e2330] border border-slate-200 dark:border-white/10 flex items-center justify-center hover:bg-green-500 hover:text-white transition-all">
+             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <div className="px-6 py-2 rounded-xl bg-white dark:bg-[#1e2330] border border-slate-200 dark:border-white/10 text-[10px] font-black text-slate-500">
+            Page 1 of 12
+          </div>
+          <button className="w-10 h-10 rounded-xl bg-white dark:bg-[#1e2330] border border-slate-200 dark:border-white/10 flex items-center justify-center hover:bg-green-500 hover:text-white transition-all">
+             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

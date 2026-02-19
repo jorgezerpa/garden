@@ -48,7 +48,7 @@ export default function AdminStats() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-black tracking-tight uppercase">Performance Intelligence</h1>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-1">Behavioral Analytics Engine [cite: 5]</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-1">Behavioral Analytics Engine</p>
           </div>
           <button 
             onClick={toggleTheme}
@@ -77,7 +77,7 @@ export default function AdminStats() {
 
           <div className="h-6 w-px bg-slate-200 dark:bg-white/10 hidden md:block" />
 
-          {/* Time Range Selector [cite: 81, 84] */}
+          {/* Time Range Selector */}
           <div className="flex gap-2">
             {['Today', 'Last 7 Days', 'Last 30 Days'].map((range) => (
               <button
@@ -172,7 +172,7 @@ export default function AdminStats() {
                 { 
                 label: 'Conversion Rate', 
                 val: '12.4%', 
-                sub: 'Seed-to-Sale [cite: 55]',
+                sub: 'Seed-to-Sale',
                 color: 'bg-green-600' 
                 },
                 { 
@@ -232,7 +232,7 @@ export default function AdminStats() {
 
       {/* Footer Meta [cite: 181] */}
       <footer className="mt-8 flex justify-between px-4 opacity-30 text-[9px] font-black uppercase tracking-widest">
-        <span>Performance Intelligence Layer v1.0 [cite: 184]</span>
+        <span>Performance Intelligence Layer v1.0 </span>
         <span>Operational Integrity: High</span>
       </footer>
     </div>

@@ -74,7 +74,7 @@ export function Sidebar({ activeItem = 'data-visualization', onNavigate }: Sideb
               Garden<span className="text-green-500">Admin</span>
             </h2>
             <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.25em] mt-1.5">
-              Intelligence System [cite: 5]
+              Intelligence System
             </p>
           </div>
         </div>
