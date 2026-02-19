@@ -11,8 +11,8 @@ const navItems = [
   { id: 'agents-management', label: 'Agents Management', desc: 'Profile & Access Control' },
   { id: 'agents-comparisson', label: 'Agents Comparison', desc: 'Rankings & Performance' },
   { id: 'team-heatmap', label: 'Team Heatmap', desc: 'Productivity Windows' },
-  { id: 'export-and-reporting', label: 'Export and Reporting', desc: 'CSV & PDF Engine' },
-  { id: 'data-visualization', label: 'Data Visualization', desc: 'Behavioral Analytics' },
+  // { id: 'export-and-reporting', label: 'Export and Reporting', desc: 'CSV & PDF Engine' },
+  { id: 'long-term-data-visualization', label: 'Long Term Data Visualization', desc: 'Behavioral Analytics' },
 ];
 
 export function Sidebar({ activeItem = 'data-visualization', onNavigate }: SidebarProps) {
