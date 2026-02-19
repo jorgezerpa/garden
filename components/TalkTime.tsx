@@ -1,126 +1,142 @@
-import { useState } from 'react';
+'use client'
+import { useState, useEffect } from 'react';
 
 export function TalkTime() {
-  const [progress, setProgress] = useState(80); 
+  const [progress, setProgress] = useState(20);
+  const [mounted, setMounted] = useState(false);
 
-  const radius = 127;
+  useEffect(() => setMounted(true), []);
+
+  const radius = 120; // Slightly smaller to allow for glow overflow
   const circumference = 2 * Math.PI * radius;
-  const gapSize = 6;
-  const segmentCount = 9;
-  const segmentLength = (circumference - (segmentCount * gapSize)) / segmentCount;
   
-  const microLineHeight = 18;
-  const microLineCount = 8;
-  const microDashWidth = 2;
-  const microGapWidth = (segmentLength / microLineCount) - microDashWidth;
-  const microDashArray = `${microDashWidth} ${microGapWidth}`;
-
-  const hue = (progress / 100) * 120;
-  const activeColor = getActiveColor(progress);
+  // Progress calculations
   const offset = circumference - (progress / 100) * circumference;
 
-  
-  function getActiveColor(progress:number): string {
-    const segmentColors = [
-      '#00C950'
-    ];
-    
-    return segmentColors[0]
-}
+  if (!mounted) return null;
 
   return (
-    <div className="overflow-hidden bg-white dark:bg-[#252b39]/80 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-sm rounded-2xl p-8 flex-[2.5] min-h-[450px] flex flex-col items-center justify-between relative transition-all duration-500 text-slate-800 dark:text-white">
+    <div className="overflow-hidden bg-white dark:bg-[#252b39]/80 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-xl rounded-3xl p-8 flex-[2.5] min-h-[480px] flex flex-col items-center justify-between relative transition-all duration-500 text-slate-800 dark:text-white">
       
+      {/* Background Decorative Ambient Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-green-500/10 blur-[100px] pointer-events-none" />
+
       {/* Top Header */}
       <div className="text-center z-10">
-        <h3 className="text-base uppercase tracking-[0.2em] opacity-60 font-medium">
+        <h3 className="text-[11px] uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500 font-bold">
           Talk Time Today
         </h3>
       </div>
 
       {/* Main Visual Container */}
-      <div className="relative w-[300px] h-[300px] flex items-center justify-center">
+      <div className="relative w-[320px] h-[320px] flex items-center justify-center">
         
-        {/* SVG Indicator */}
         <svg 
-          width="300" height="300" viewBox="0 0 300 300" 
-          className="-rotate-90 filter drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]"
+          width="320" height="320" viewBox="0 0 320 320" 
+          className="-rotate-90"
         >
           <defs>
-            <mask id="segment-mask">
-              <circle cx="150" cy="150" r={radius} stroke="white" strokeWidth="30" fill="none" strokeDasharray={`${segmentLength} ${gapSize}`} />
-            </mask>
-            <mask id="micro-lines-mask">
-              <circle cx="150" cy="150" r={radius} stroke="white" strokeWidth={microLineHeight} fill="none" strokeDasharray={microDashArray} />
+            {/* Gradient for the main progress line */}
+            <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#22c55e" />
+              <stop offset="100%" stopColor="#4ade80" />
+            </linearGradient>
+
+            {/* Tapered Mask for the Outer Half-Ring */}
+            <mask id="taperMask">
+               <radialGradient id="taperGrad">
+                 <stop offset="90%" stopColor="white" />
+                 <stop offset="100%" stopColor="transparent" />
+               </radialGradient>
+               {/* This creates the "thick in middle, thin at ends" look via a stroke-dasharray and linecap */}
             </mask>
           </defs>
 
-          {/* Thin Outer Border */}
-          <circle cx="150" cy="150" r="149" stroke="currentColor" strokeWidth="1" fill="none" className="opacity-10" />
-
-          {/* Active Progress */}
-          <circle 
-            cx="150" cy="150" r={radius} 
-            stroke={activeColor} strokeWidth="30" fill="none"
-            mask="url(#segment-mask)"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            className="transition-all duration-700 ease-in-out"
+          {/* 1. The Tapered Outer Half-Ring (Visual Flare) */}
+          <path
+            d="M 160,160 m -158,0 a 158,158 0 1,1 316,0"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="0.5"
+            className="opacity-20"
+          />
+          <path
+            d="M 60,280 A 150,150 0 0 1 60,40"
+            fill="none"
+            stroke="url(#progressGradient)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            className="opacity-40"
           />
 
-          {/* Micro-Lines */}
-          <g mask="url(#segment-mask)">
-            <circle 
-              cx="150" cy="150" r={radius} 
-              stroke="white" strokeWidth={microLineHeight} fill="none"
-              mask="url(#micro-lines-mask)"
-              strokeDasharray={circumference} strokeDashoffset={offset}
-              className="transition-all duration-700 ease-in-out opacity-40"
-            />
-          </g>
+          {/* 2. Background Track (Ghost ring) */}
+          <circle 
+            cx="160" cy="160" r={radius} 
+            stroke="currentColor" strokeWidth="12" fill="none"
+            className="text-slate-200 dark:text-white/5"
+          />
+
+          {/* 3. The Main Glowing Progress Bar */}
+          <circle 
+            cx="160" cy="160" r={radius} 
+            stroke="url(#progressGradient)" strokeWidth="12" fill="none"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            className="transition-all duration-1000 ease-out drop-shadow-[0_0_12px_rgba(34,197,94,0.5)]"
+          />
+
+          {/* 4. The Cyber-Ticks (Inner Dial) */}
+          <circle 
+            cx="160" cy="160" r={radius - 20} 
+            stroke="currentColor" strokeWidth="4" fill="none"
+            strokeDasharray="2 12"
+            className="opacity-10"
+          />
         </svg>
 
-        {/* Inner Circle Text */}
+        {/* Center UI */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center z-10">
-            <span className="text-[14px] font-semibold uppercase tracking-widest text-green-500 dark:drop-shadow-[0_0_8px_rgba(34,197,94,0.4)] mb-2 block">
-              On Fire!
+          <div className="text-center bg-white/5 dark:bg-black/5 p-8 rounded-full backdrop-blur-sm border border-white/5">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-green-500 mb-1 block animate-pulse">
+              Active Session
             </span>
-            <h2 className="text-4xl font-mono tracking-tighter text-slate-800 dark:text-white dark:drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
-              02:15:30
+            <h2 className="text-5xl font-light tracking-tighter tabular-nums text-slate-800 dark:text-white">
+              02:15<span className="opacity-30 text-3xl">:30</span>
             </h2>
-            {/* Leaves/Icon placeholder */}
-            <div className="mt-4 flex justify-center opacity-40">
-              <div className="w-6 h-6 bg-slate-400 dark:bg-slate-600 rounded-full blur-[1px]" />
+            <div className="flex items-center justify-center gap-2 mt-2">
+                <div className="w-1 h-1 rounded-full bg-green-500" />
+                <span className="text-[14px] font-bold opacity-40 uppercase tracking-widest">Goal: 4h</span>
             </div>
           </div>
         </div>
-
-
-
-
       </div>
-
 
       {/* Bottom Stats Footer */}
-      <div className="w-full flex justify-between items-center px-4">
-        <div className="flex flex-col">
-          <span className="text-[10px] uppercase tracking-widest opacity-40">Calls</span>
-          <span className="text-xl font-medium">26</span>
+      <div className="w-full flex justify-between items-end px-2">
+        <div className="flex flex-col gap-1">
+          <span className="text-[9px] font-bold uppercase tracking-widest opacity-40">Call Volume</span>
+          <div className="flex items-baseline gap-1">
+            <span className="text-2xl font-bold">26</span>
+            <span className="text-[10px] text-green-500 font-bold">+12% above yesterday</span>
+          </div>
         </div>
 
-        {/* Small separator line */}
-        <div className="h-8 w-[1px] bg-white/10" />
+        {/* Center Aesthetic Divider */}
+        <div className="flex gap-1 pb-2">
+            {[1,2,3].map(i => <div key={i} className="w-1 h-1 rounded-full bg-slate-300 dark:bg-white/10" />)}
+        </div>
 
-        <div className="flex flex-col items-end">
+        <div className="flex flex-col items-end gap-1">
+          <span className="text-[9px] font-bold uppercase tracking-widest opacity-40">Deep Calls</span>
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]" />
-            <span className="text-[10px] uppercase tracking-widest opacity-40">Deep Calls</span>
+            <span className="text-2xl font-bold">8</span>
+            <div className="w-4 h-4 rounded-full bg-orange-500/20 border border-orange-500/50 flex items-center justify-center">
+                <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+            </div>
           </div>
-          <span className="text-xl font-medium">8</span>
         </div>
       </div>
-      
     </div>
   );
 }
