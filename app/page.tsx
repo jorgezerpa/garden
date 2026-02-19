@@ -1,4 +1,5 @@
 'use client'
+import { LineChart } from '@/components/charts/LineChart'
 import { TalkTime } from '@/components/TalkTime'
 import { useTheme } from 'next-themes'
 import { useState, useEffect } from 'react'
@@ -131,9 +132,10 @@ export default function Home() {
               {/* Atmospheric Glow inside the graph area */}
               <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-green-500/5 to-transparent pointer-events-none" />
               
-              <span className="text-[10px] uppercase tracking-widest text-slate-300 dark:text-slate-600 font-bold">
+              {/* <span className="text-[10px] uppercase tracking-widest text-slate-300 dark:text-slate-600 font-bold">
                 Graph Component Area
-              </span>
+              </span> */}
+              <LineChart />
             </div>
 
             {/* 4. X-Axis Labels Placeholder */}
