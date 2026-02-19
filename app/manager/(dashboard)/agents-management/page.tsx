@@ -178,12 +178,22 @@ const mockAgents = [
 ];
 
 export default function AgentsManagement() {
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [pageSize, setPageSize] = useState(10);
+  // Track which agent is expanded AND which mode (details vs modify)
+  const [expanded, setExpanded] = useState<{ id: number | null, mode: 'details' | 'modify' | null }>({
+    id: null,
+    mode: null
+  });
+
+  const toggleExpand = (id: number, mode: 'details' | 'modify') => {
+    if (expanded.id === id && expanded.mode === mode) {
+      setExpanded({ id: null, mode: null });
+    } else {
+      setExpanded({ id, mode });
+    }
+  };
 
   return (
-    <div className="space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      
+    <div className="space-y-8 pb-20 font-sans">
       {/* 1. Header & Search Bar */}
       <div className="flex flex-col lg:flex-row justify-between gap-6 items-end">
         <div className="w-full lg:max-w-md">
@@ -207,11 +217,10 @@ export default function AgentsManagement() {
             <option>5+ Days</option>
             <option>10+ Days</option>
           </select>
-          <input type="date" className="bg-white dark:bg-[#1e2330] dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest outline-none" />
+          {/* <input type="date" className="bg-white dark:bg-[#1e2330] dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest outline-none" /> */}
         </div>
       </div>
 
-      {/* 3. Agent Cards List */}
       <div className="space-y-4">
         {mockAgents.map((agent) => (
           <div key={agent.id} className="bg-white dark:bg-[#1e2330] rounded-[2rem] border border-slate-200 dark:border-white/10 overflow-hidden transition-all duration-500 shadow-sm">
@@ -243,153 +252,121 @@ export default function AgentsManagement() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-slate-400 hover:text-amber-500">
-                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              {/* ACTION BUTTONS */}
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => toggleExpand(agent.id, 'modify')}
+                  className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-md border ${
+                    expanded.id === agent.id && expanded.mode === 'modify' 
+                    ? 'bg-amber-500 border-amber-500 text-white' 
+                    : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:border-amber-500/50'
+                  }`}
+                >
+                  Modify User
                 </button>
                 <button 
-                  onClick={() => setExpandedId(expandedId === agent.id ? null : agent.id)}
-                  className="px-5 py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[9px] font-black uppercase tracking-widest hover:bg-green-500 dark:hover:bg-green-500 dark:hover:text-white transition-all shadow-md"
+                  onClick={() => toggleExpand(agent.id, 'details')}
+                  className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-md ${
+                    expanded.id === agent.id && expanded.mode === 'details'
+                    ? 'bg-green-500 text-white'
+                    : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-green-500 dark:hover:bg-green-500 dark:hover:text-white'
+                  }`}
                 >
-                  {expandedId === agent.id ? 'Hide Details' : 'See Details'}
+                  {expanded.id === agent.id && expanded.mode === 'details' ? 'Hide Details' : 'See Details'}
                 </button>
               </div>
             </div>
 
-{/* Dropdown Section: Behavioral Intelligence */}
-{expandedId === agent.id && (
-  <div className="px-6 pb-8 pt-4 border-t border-slate-100 dark:border-white/5 animate-in slide-in-from-top-4 duration-500">
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      
-      {/* Left: Performance Summary List */}
-      <div className="lg:col-span-1 space-y-4">
-        <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Behavioral Intelligence</h5>
-        
-        <ul className="space-y-4">
-          <li className="flex items-start gap-3">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />
-            <div>
-              <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Performance History</p>
-              <p className="text-[11px] font-bold dark:text-slate-200">Total: 4,280 calls | Lifetime Seed-to-Sale: 8.4%</p>
-            </div>
-          </li>
-          
-          <li className="flex items-start gap-3">
-            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
-            <div>
-              <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Historical Trends</p>
-              <p className="text-[11px] font-bold dark:text-slate-200">Consistency +12% vs last month | Avg Call length increasing</p>
-            </div>
-          </li>
+            {/* --- DROPDOWN 1: MODIFY USER (Administrative) --- */}
+            {expanded.id === agent.id && expanded.mode === 'modify' && (
+              <div className="px-6 pb-8 pt-4 border-t border-slate-100 dark:border-white/5 animate-in slide-in-from-top-4 duration-500">
+                <div className="p-6 bg-slate-50 dark:bg-white/5 rounded-[2rem] border border-dashed border-slate-200 dark:border-white/10">
+                  <div className="flex flex-col xl:flex-row gap-8 justify-between">
+                    <div className="space-y-4">
+                      <h5 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Administrative Actions</h5>
+                      <div className="flex flex-wrap gap-3">
+                        <button className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500 text-amber-600 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all">
+                          Pause User
+                        </button>
+                        <button className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 hover:bg-red-500 text-red-600 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all">
+                          Terminate
+                        </button>
+                      </div>
+                    </div>
 
-          <li className="flex items-start gap-3">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0" />
-            <div>
-              <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Strength Periods</p>
-              <p className="text-[11px] font-bold dark:text-slate-200">Block 2 (10:00-12:00) | Mid-week peak efficiency</p>
-            </div>
-          </li>
+                    <div className="flex-1 max-w-2xl">
+                      <h5 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Edit Credentials</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input type="text" defaultValue={agent.name} placeholder="Name" className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none" />
+                        <input type="email" defaultValue={agent.email} placeholder="Email" className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none" />
+                        <input type="password" placeholder="New Password" className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none" />
+                      </div>
+                    </div>
 
-          <li className="flex items-start gap-3">
-            <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
-            <div>
-              <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Weak Periods</p>
-              <p className="text-[11px] font-bold dark:text-slate-200">Friday afternoons | High churn in 0-1 min duration bucket</p>
-            </div>
-          </li>
+                    <div className="flex items-end">
+                      <button className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[9px] font-black uppercase rounded-xl hover:bg-green-500 transition-all">
+                        Save Changes
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
-          <li className="flex items-start gap-3">
-            <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 flex-shrink-0" />
-            <div>
-              <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Behavioral Patterns</p>
-              <p className="text-[11px] font-bold dark:text-slate-200">High seed volume / Low callback ratio (Potential quantity over quality)</p>
-            </div>
-          </li>
-        </ul>
-      </div>
+            {/* --- DROPDOWN 2: SEE DETAILS (Behavioral) --- */}
+            {expanded.id === agent.id && expanded.mode === 'details' && (
+              <div className="px-6 pb-8 pt-4 border-t border-slate-100 dark:border-white/5 animate-in slide-in-from-top-4 duration-500">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Summary List */}
+                  <div className="lg:col-span-1 space-y-4">
+                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Summary</h5>
+                    <ul className="space-y-4">
+                      <li className="flex items-start gap-3">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5" />
+                        <div>
+                          <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Performance History</p>
+                          <p className="text-[11px] font-bold dark:text-slate-200">{agent.behavior.history}</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5" />
+                        <div>
+                          <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Historical Trends</p>
+                          <p className="text-[11px] font-bold dark:text-slate-200">{agent.behavior.trends}</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5" />
+                        <div>
+                          <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Behavioral Patterns</p>
+                          <p className="text-[11px] font-bold dark:text-slate-200">{agent.behavior.patterns}</p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
 
-      {/* Right: Soft Chart Visual (Takes 2 columns) */}
-      <div className="lg:col-span-2 bg-slate-50 dark:bg-black/20 rounded-[2rem] p-6 border border-slate-100 dark:border-white/5">
-        <div className="flex justify-between items-center mb-6">
-          <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">30-Day Activity Overlay</h5>
-          <div className="flex gap-4 text-[8px] font-black uppercase tracking-widest">
-            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-green-500" /> Seeds</div>
-            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-slate-400" /> Talk Time</div>
-          </div>
-        </div>
-        
-        <div className="h-56 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={performanceTrend}>
-              <defs>
-                <linearGradient id="colorSeeds" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} />
-              <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: '700', fill: '#94a3b8'}} />
-              <YAxis hide />
-              <Tooltip 
-                contentStyle={{backgroundColor: '#1e2330', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '10px'}}
-                itemStyle={{color: '#fff'}}
-              />
-              <Area 
-                type="monotone" 
-                dataKey="seeds" 
-                stroke="#22c55e" 
-                strokeWidth={3} 
-                fillOpacity={1} 
-                fill="url(#colorSeeds)" 
-                activeDot={{ r: 6, strokeWidth: 0 }}
-              />
-              <Area 
-                type="monotone" 
-                dataKey="talkTime" 
-                stroke="#94a3b8" 
-                strokeWidth={2} 
-                strokeDasharray="5 5"
-                fill="transparent" 
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-
-
+                  {/* Chart Overlay */}
+                  <div className="lg:col-span-2 bg-slate-50 dark:bg-black/20 rounded-[2rem] p-6 border border-slate-100 dark:border-white/5">
+                    <div className="flex justify-between items-center mb-6">
+                      <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">30-Day Activity Overlay</h5>
+                    </div>
+                    <div className="h-56 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={performanceTrend}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} />
+                          <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: '700', fill: '#94a3b8'}} />
+                          <Tooltip contentStyle={{backgroundColor: '#1e2330', border: 'none', borderRadius: '12px', fontSize: '10px'}} />
+                          <Area type="monotone" dataKey="seeds" stroke="#22c55e" strokeWidth={3} fillOpacity={0.1} fill="#22c55e" />
+                          <Area type="monotone" dataKey="talkTime" stroke="#94a3b8" strokeWidth={2} strokeDasharray="5 5" fill="transparent" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ))}
-      </div>
-
-      {/* 4. Pagination & Page Size */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-10 border-t border-slate-200 dark:border-white/5">
-        <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
-          <span>Show rows:</span>
-          {[10, 25, 50].map(size => (
-            <button 
-              key={size}
-              onClick={() => setPageSize(size)}
-              className={`hover:text-green-500 transition-colors ${pageSize === size ? 'text-green-500' : ''}`}
-            >
-              {size}
-            </button>
-          ))}
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <button className="w-10 h-10 rounded-xl bg-white dark:bg-[#1e2330] border border-slate-200 dark:border-white/10 flex items-center justify-center hover:bg-green-500 hover:text-white transition-all">
-             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
-          </button>
-          <div className="px-6 py-2 rounded-xl bg-white dark:bg-[#1e2330] border border-slate-200 dark:border-white/10 text-[10px] font-black text-slate-500">
-            Page 1 of 12
-          </div>
-          <button className="w-10 h-10 rounded-xl bg-white dark:bg-[#1e2330] border border-slate-200 dark:border-white/10 flex items-center justify-center hover:bg-green-500 hover:text-white transition-all">
-             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
-          </button>
-        </div>
       </div>
     </div>
   );
