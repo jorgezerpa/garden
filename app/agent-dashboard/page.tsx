@@ -56,17 +56,44 @@ export default function Home() {
 
         <div className="flex items-center gap-6">
           <div className="hidden md:flex flex-col items-end text-sm">
-            <span className="opacity-70">Welcome, <span className="font-bold text-green-500 dark:text-green-400">Sarah</span></span>
-            <span className="text-[10px] uppercase tracking-widest opacity-40 font-semibold">Wednesday, April 24</span>
+            <span className="opacity-70">
+              Welcome, <span className="font-bold text-green-500 dark:text-green-400">Sarah</span>
+            </span>
+            <span className="text-[10px] uppercase tracking-widest opacity-40 font-semibold">
+              Wednesday, April 24
+            </span>
           </div>
           
           <button 
             onClick={toggleTheme}
             className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-green-500/10 border border-slate-200 dark:border-white/10 transition-all active:scale-95"
           >
-            {theme === 'dark' ? '☀️' : '🌙'}
+            {/* Container is w-5 h-5 to match standard icon sizing. 
+              Using 'relative' so the Image component can 'fill' it.
+            */}
+            <div className="relative w-6 h-6">
+              {theme === 'dark' ? (
+                <Image 
+                  src="/icons-agent-dashboard/Light.svg" 
+                  alt="Switch to light mode" 
+                  fill 
+                  className="object-contain"
+                  priority
+                />
+              ) : (
+                <Image 
+                  src="/icons-agent-dashboard/Dark.svg" 
+                  alt="Switch to dark mode" 
+                  fill 
+                  className="object-contain"
+                  priority
+                />
+              )}
+            </div>
           </button>
         </div>
+
+
       </header>
 
       {/* --- Main Content Grid --- */}
