@@ -3,6 +3,7 @@ import { LineChart } from '@/components/charts/LineChart'
 import { TalkTime } from '@/components/TalkTime'
 import { useTheme } from 'next-themes'
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 
 export default function Home() {
   const { theme, setTheme } = useTheme()
@@ -31,15 +32,27 @@ export default function Home() {
       {/* Background Glow Decorations (Dark Mode Only) */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-0 dark:opacity-100 transition-opacity duration-1000">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-green-900/20 blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-900/10 blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-900/10 blur-[120px]" /> 
       </div>
 
       {/* --- Header / Top Bar --- */}
       <header className={`${cardStyle} flex items-center justify-between !py-3 relative z-10`}>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg shadow-lg shadow-green-500/20" />
-          <h1 className="font-bold text-lg hidden sm:block tracking-tight text-slate-700 dark:text-slate-100">Sales Garden</h1>
+      <div className="flex items-center gap-3">
+        {/* The Parent Container controls the size */}
+        <div className="relative w-10 h-10 rounded-lg shadow-sm dark:shadow-lg shadow-green-500/20 overflow-hidden">
+          <Image
+            src="/icons-agent-dashboard/Logo.svg"
+            alt="Sales Garden Logo"
+            fill
+            className="object-cover"
+            priority
+          />
         </div>
+  
+  <h1 className="font-bold text-lg hidden sm:block tracking-tight text-slate-700 dark:text-slate-100">
+    Sales Garden
+  </h1>
+</div>
 
         <div className="flex items-center gap-6">
           <div className="hidden md:flex flex-col items-end text-sm">
@@ -69,18 +82,21 @@ export default function Home() {
             
             <div className="flex flex-col">
               <MindsetSlider 
+                id="energy"
                 label="Energy" 
                 color="bg-green-500" 
                 value={mindset.energy} 
                 onChange={(v) => setMindset({...mindset, energy: v})} 
               />
-              <MindsetSlider 
+              <MindsetSlider
+                id="focus" 
                 label="Focus" 
                 color="bg-yellow-500" 
                 value={mindset.focus} 
                 onChange={(v) => setMindset({...mindset, focus: v})} 
               />
               <MindsetSlider 
+                id="motivation"
                 label="Motivation" 
                 color="bg-orange-500" 
                 value={mindset.motivation} 
@@ -217,10 +233,10 @@ export default function Home() {
             </h3>
             
             <div className="flex flex-col h-full justify-between pb-4">
-              <StatRow label="Seeds" value={14} />
-              <StatRow label="Callback" value={6} />
-              <StatRow label="Lead" value={3} />
-              <StatRow label="Sale" value={1} />
+              <StatRow id="seeds" label="Seeds" value={14} />
+              <StatRow id="callback" label="Callback" value={6} />
+              <StatRow id="lead" label="Lead" value={3} />
+              <StatRow id="sale" label="Sale" value={1} />
             </div>
           </div>
           {/* --- Call Blocks Section --- */}
@@ -247,7 +263,8 @@ export default function Home() {
       {/* --- Footer --- */}
       <footer className="flex items-center justify-between px-2 py-2 text-[10px] font-bold opacity-40 uppercase tracking-widest relative z-10">
         <div>Version 1.0</div>
-        <div className="italic text-center hidden md:block lowercase tracking-normal opacity-80">&quot;Seeds now, harvest later!&quot;</div>
+        {/* <div className="italic text-center hidden md:block lowercase tracking-normal opacity-80">&quot;Seeds now, harvest later!&quot;</div> */}
+        <div className="italic text-center hidden md:block lowercase tracking-normal opacity-80"></div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" />
           Connected
@@ -264,13 +281,98 @@ export default function Home() {
 // MINDSET COMPONENT
 /////////////////////////////////
 interface MindsetSliderProps {
+  id: string;
   label: string;
   color: string; // Tailwind color class like 'bg-green-500' or 'bg-orange-400'
   value: number;
   onChange: (val: number) => void;
 }
 
-const MindsetSlider = ({ label, color, value, onChange }: MindsetSliderProps) => {
+const MindsetSlider = ({ id, label, color, value, onChange }: MindsetSliderProps) => {
+
+  let styles = `
+            absolute w-full h-full appearance-none bg-transparent cursor-pointer 
+            /* Chrome, Safari, Edge, Opera */
+            [&::-webkit-slider-thumb]:appearance-none 
+            [&::-webkit-slider-thumb]:w-6 
+            [&::-webkit-slider-thumb]:h-6 
+            [&::-webkit-slider-thumb]:bg-[url('/icons-agent-dashboard/Energy.svg')] 
+            [&::-webkit-slider-thumb]:bg-contain 
+            [&::-webkit-slider-thumb]:bg-no-repeat 
+            [&::-webkit-slider-thumb]:bg-center
+            [&::-webkit-slider-thumb]:border-0
+            /* Firefox */
+            [&::-moz-range-thumb]:w-6 
+            [&::-moz-range-thumb]:h-6 
+            [&::-moz-range-thumb]:bg-[url('/icons-agent-dashboard/Energy.svg')] 
+            [&::-moz-range-thumb]:bg-contain 
+            [&::-moz-range-thumb]:bg-no-repeat 
+            [&::-moz-range-thumb]:bg-center
+            [&::-moz-range-thumb]:border-0  
+          `
+    if(id==="energy") styles = `
+            absolute w-full h-full appearance-none bg-transparent cursor-pointer 
+            /* Chrome, Safari, Edge, Opera */
+            [&::-webkit-slider-thumb]:appearance-none 
+            [&::-webkit-slider-thumb]:w-7 
+            [&::-webkit-slider-thumb]:h-7 
+            [&::-webkit-slider-thumb]:bg-[url('/icons-agent-dashboard/Energy.svg')] 
+            [&::-webkit-slider-thumb]:bg-contain 
+            [&::-webkit-slider-thumb]:bg-no-repeat 
+            [&::-webkit-slider-thumb]:bg-center
+            [&::-webkit-slider-thumb]:border-0
+            /* Firefox */
+            [&::-moz-range-thumb]:w-6 
+            [&::-moz-range-thumb]:h-6 
+            [&::-moz-range-thumb]:bg-[url('/icons-agent-dashboard/Energy.svg')] 
+            [&::-moz-range-thumb]:bg-contain 
+            [&::-moz-range-thumb]:bg-no-repeat 
+            [&::-moz-range-thumb]:bg-center
+            [&::-moz-range-thumb]:border-0  
+          `
+    if(id==="focus") styles = `
+            absolute w-full h-full appearance-none bg-transparent cursor-pointer 
+            /* Chrome, Safari, Edge, Opera */
+            [&::-webkit-slider-thumb]:appearance-none 
+            [&::-webkit-slider-thumb]:w-6 
+            [&::-webkit-slider-thumb]:h-6 
+            [&::-webkit-slider-thumb]:bg-[url('/icons-agent-dashboard/Focus.svg')] 
+            [&::-webkit-slider-thumb]:bg-contain 
+            [&::-webkit-slider-thumb]:bg-no-repeat 
+            [&::-webkit-slider-thumb]:bg-center
+            [&::-webkit-slider-thumb]:border-0
+            /* Firefox */
+            [&::-moz-range-thumb]:w-6 
+            [&::-moz-range-thumb]:h-6 
+            [&::-moz-range-thumb]:bg-[url('/icons-agent-dashboard/Focus.svg')] 
+            [&::-moz-range-thumb]:bg-contain 
+            [&::-moz-range-thumb]:bg-no-repeat 
+            [&::-moz-range-thumb]:bg-center
+            [&::-moz-range-thumb]:border-0  
+          `
+    if(id==="motivation") styles = `
+            absolute w-full h-full appearance-none bg-transparent cursor-pointer 
+            /* Chrome, Safari, Edge, Opera */
+            [&::-webkit-slider-thumb]:appearance-none 
+            [&::-webkit-slider-thumb]:w-6 
+            [&::-webkit-slider-thumb]:h-6 
+            [&::-webkit-slider-thumb]:bg-[url('/icons-agent-dashboard/Motivation.svg')] 
+            [&::-webkit-slider-thumb]:bg-contain 
+            [&::-webkit-slider-thumb]:bg-no-repeat 
+            [&::-webkit-slider-thumb]:bg-center
+            [&::-webkit-slider-thumb]:border-0
+            /* Firefox */
+            [&::-moz-range-thumb]:w-6 
+            [&::-moz-range-thumb]:h-6 
+            [&::-moz-range-thumb]:bg-[url('/icons-agent-dashboard/Motivation.svg')] 
+            [&::-moz-range-thumb]:bg-contain 
+            [&::-moz-range-thumb]:bg-no-repeat 
+            [&::-moz-range-thumb]:bg-center
+            [&::-moz-range-thumb]:border-0  
+          `
+
+
+
   return (
     <div className="flex flex-col gap-2 w-full mb-4 group">
       <div className="flex justify-between items-center">
@@ -282,9 +384,8 @@ const MindsetSlider = ({ label, color, value, onChange }: MindsetSliderProps) =>
       <div className="relative flex items-center h-4">
         {/* Custom Track Background */}
         <div className="absolute w-full h-[3px] bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-          {/* Progress fill */}
           <div 
-            className={`h-full ${color} opacity-80 shadow-[0_0_8px_rgba(0,0,0,0.2)] dark:shadow-none`} 
+            className={`h-full ${color} opacity-80`} 
             style={{ width: `${value}%` }}
           />
         </div>
@@ -296,17 +397,7 @@ const MindsetSlider = ({ label, color, value, onChange }: MindsetSliderProps) =>
           max="100"
           value={value}
           onChange={(e) => onChange(parseInt(e.target.value))}
-          className="absolute w-full h-full appearance-none bg-transparent cursor-pointer 
-                     accent-white dark:accent-slate-200 
-                     [&::-webkit-slider-thumb]:appearance-none 
-                     [&::-webkit-slider-thumb]:w-3 
-                     [&::-webkit-slider-thumb]:h-3 
-                     [&::-webkit-slider-thumb]:rounded-full 
-                     [&::-webkit-slider-thumb]:bg-white 
-                     [&::-webkit-slider-thumb]:border-2 
-                     [&::-webkit-slider-thumb]:border-slate-400
-                     dark:[&::-webkit-slider-thumb]:border-slate-100
-                     [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(0,0,0,0.2)]"
+          className={styles}
         />
       </div>
     </div>
@@ -351,17 +442,32 @@ const ResetButton = ({ label, onClick }: ResetButtonProps) => {
 // TODAY'S STATS
 /////////////////////////////////
 interface StatRowProps {
+  id: string;
   label: string;
   value: number | string;
   // We'll keep a slot for the icon placeholder as requested earlier
 }
 
-const StatRow = ({ label, value }: StatRowProps) => {
+const StatRow = ({ id, label, value }: StatRowProps) => {
+  // Map the labels to your svg filenames in the public folder
+  let iconSrc = `/icons-agent-dashboard/`;
+  if(id ==="seeds") iconSrc += "Seeds.svg"
+  if(id ==="callback") iconSrc += "Callbacks.svg"
+  if(id ==="lead") iconSrc += "Leads.svg"
+  if(id ==="sale") iconSrc += "Sales.svg"
+
   return (
     <div className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-white/5 last:border-0 group">
       <div className="flex items-center gap-3">
-        {/* Icon Placeholder: Fixed dimensions as requested */}
-        <div className="w-5 h-5 bg-slate-200 dark:bg-slate-700/50 rounded-md transition-colors group-hover:bg-green-500/20" />
+        {/* Container for the Next.js Image */}
+        <div className="relative w-6 h-6 rounded-md transition-colors  overflow-hidden">
+          <Image
+            src={iconSrc}
+            alt={`${label} icon`}
+            fill
+            className="object-contain p-0.5" // object-contain is usually better for icons
+          />
+        </div>
         
         <span className="text-[12px] font-medium text-slate-600 dark:text-slate-300">
           {label}
@@ -469,25 +575,53 @@ const ManualSeeding = () => {
             
             {/* Standard Seed */}
             <button className="w-full md:w-auto flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-green-500/50 transition-all active:scale-90 group">
-              <div className="w-4 h-4 bg-slate-400/50 rounded-sm group-hover:bg-green-500 transition-colors" />
+              <div className="relative w-7 h-7 rounded-md transition-colors overflow-hidden">
+                <Image
+                  src={"/icons-agent-dashboard/Seeds.svg"}
+                  alt={`Seeds icon`}
+                  fill
+                  className="object-contain p-0.5" // object-contain is usually better for icons
+                />
+              </div>
               <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Seed</span>
             </button>
 
             {/* Callback */}
             <button className="w-full md:w-auto flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-blue-500/50 transition-all active:scale-90 group">
-              <div className="w-4 h-4 bg-slate-400/50 rounded-sm group-hover:bg-blue-500 transition-colors" />
+              <div className="relative w-7 h-7 rounded-md transition-colors overflow-hidden">
+                <Image
+                  src={"/icons-agent-dashboard/Callbacks.svg"}
+                  alt={`Seeds icon`}
+                  fill
+                  className="object-contain p-0.5" // object-contain is usually better for icons
+                />
+              </div>
               <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Callback</span>
             </button>
 
             {/* Connection */}
             <button className="w-full md:w-auto flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-purple-500/50 transition-all active:scale-90 group">
-              <div className="w-4 h-4 bg-slate-400/50 rounded-sm group-hover:bg-purple-500 transition-colors" />
+              <div className="relative w-7 h-7 rounded-md transition-colors overflow-hidden">
+                <Image
+                  src={"/icons-agent-dashboard/Connect.svg"}
+                  alt={`Seeds icon`}
+                  fill
+                  className="object-contain p-0.5" // object-contain is usually better for icons
+                />
+              </div>
               <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Connect</span>
             </button>
 
             {/* Harvest (The main action) */}
             <button className="w-full md:w-auto flex-[1.2] flex flex-col items-center justify-center gap-1 py-2 rounded-2xl bg-green-500 text-white shadow-lg shadow-green-500/40 hover:bg-green-400 transition-all active:scale-95">
-              <div className="w-4 h-4 bg-white/30 rounded-sm" />
+              <div className="relative w-7 h-7 rounded-md transition-colors overflow-hidden">
+                <Image
+                  src={"/icons-agent-dashboard/Harvest.svg"}
+                  alt={`Seeds icon`}
+                  fill
+                  className="object-contain p-0.5" // object-contain is usually better for icons
+                />
+              </div>
               <span className="text-[10px] font-black uppercase tracking-widest">Harvest</span>
             </button>
 
