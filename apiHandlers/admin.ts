@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = '/api/admin';
+const API_BASE_URL = 'http://localhost:3001/api/admin';
 const JWT = 'YOUR_TOKEN_HERE'; // Temporary placeholder for your token logic
 
 // Configure axios defaults for this file
@@ -24,6 +24,18 @@ export interface CreateManagerData {
 export interface UpdateManagerData {
   name?: string;
   email?: string;
+}
+
+export interface CreateAgentData {
+  email: string;
+  name: string;
+  password: string;
+}
+
+export interface UpdateAgentData {
+  name?: string;
+  email?: string;
+  password?: string;
 }
 
 export const addManager = async (data: CreateManagerData) => {
@@ -50,6 +62,38 @@ export const getManagersList = async (page: number = 1, limit: number = 10) => {
 
 export const removeManager = async (id: number) => {
   const response = await adminClient.delete(`/removeManagers/${id}`);
+  return response.data;
+};
+
+/**
+ * AGENTS
+ */
+
+export const addAgent = async (data: CreateAgentData) => {
+  const response = await adminClient.post('/addAgent', data, getAuthHeader());
+  return response.data;
+};
+
+export const editAgent = async (id: number, data: UpdateAgentData) => {
+  const response = await adminClient.put(`/editAgent/${id}`, data, getAuthHeader());
+  return response.data;
+};
+
+export const getAgent = async (id: number) => {
+  const response = await adminClient.get(`/getAgent/${id}`, getAuthHeader());
+  return response.data;
+};
+
+export const getAgentsList = async (page: number = 1, limit: number = 10) => {
+  const response = await adminClient.get('/getAgentsList', {
+    ...getAuthHeader(),
+    params: { page, limit },
+  });
+  return response.data;
+};
+
+export const removeAgent = async (id: number) => {
+  const response = await adminClient.delete(`/removeAgent/${id}`, getAuthHeader());
   return response.data;
 };
 
@@ -114,4 +158,20 @@ export const deleteAssignationByDate = async (date: string) => {
     params: { date },
   });
   return response.data;
+};
+
+///////////////////
+///////////////////
+function getAuthHeader() {
+  const token = localStorage.getItem('jwt');
+  if(!token) {
+    console.log("error") // @todo make this function an utility
+    // throw new Error("Unauthorized")
+  }
+
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  };
 };

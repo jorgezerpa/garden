@@ -1,9 +1,10 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, AreaChart, Area 
 } from 'recharts';
+import { addAgent, editAgent, getAgent, getAgentsList, removeAgent } from '@/apiHandlers/admin';
 
 // --- Mock Data ---
 const performanceTrend = [
@@ -177,18 +178,84 @@ const mockAgents = [
   }
 ];
 
+interface Agent{
+  name: string 
+  user: {
+    email: string
+  }
+
+}
+
 export default function AgentsManagement() {
-  // Track which agent is expanded AND which mode (details vs modify)
+  // --- States ---
+
+  const [agents, setAgents] = useState<any[]>([]) // @todo type
+
   const [expanded, setExpanded] = useState<{ id: number | null, mode: 'details' | 'modify' | null }>({
     id: null,
     mode: null
   });
+  
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newAgent, setNewAgent] = useState({ name: '', email: '', password: '' });
+  const [updatingInputs, setUpdatingInputs] = useState({ name: '', email: '', password: '' });
 
-  const toggleExpand = (id: number, mode: 'details' | 'modify') => {
+  useEffect(()=>{
+    (async()=>{
+      try {
+        const agents = await getAgentsList(1, 10)
+        setAgents(agents.data)
+      } catch (error) {
+        console.log(error)
+      }
+    })()
+  }, [])
+
+  // --- Handlers ---
+  const toggleExpand = (id: number, mode: 'details' | 'modify', agent?: any) => { // @todo create agent type
     if (expanded.id === id && expanded.mode === mode) {
       setExpanded({ id: null, mode: null });
+      setUpdatingInputs({ email: "", name: "", password: "" })
     } else {
       setExpanded({ id, mode });
+      if(agent) setUpdatingInputs({ email: agent.user.email, name: agent.name, password: "" })
+    }
+  };
+
+  const handleCreation = async() => {
+    try {
+      await addAgent({ name: newAgent.name, email: newAgent.email, password: newAgent.password })
+      
+      const agents = await getAgentsList(1, 10)
+      setAgents(agents.data)
+
+      setNewAgent({ name: '', email: '', password: '' });
+      setShowAddForm(false);
+    } catch (error) {
+      // @todo
+      console.log(error)
+    }
+  };
+
+  const handleTerminate = async(agent: any) => {
+    try {
+      await removeAgent(agent.id)
+      const agents = await getAgentsList(1, 10)
+      setAgents(agents.data)
+    } catch (error) { // @todo
+      console.log(error)
+    }
+  };
+
+  const handleUpdate = async(id: number) => {
+    // In a real app, you'd pull these from a ref or local state for that specific agent
+    // For this log task, we'll log the ID and the intent to update
+    try {
+      await editAgent(id, { email: updatingInputs.email, name: updatingInputs.name, password: updatingInputs.password })
+      const agents = await getAgentsList(1, 10)
+      setAgents(agents.data)
+    } catch (error) {
+      console.log(error) // todo
     }
   };
 
@@ -217,12 +284,67 @@ export default function AgentsManagement() {
             <option>5+ Days</option>
             <option>10+ Days</option>
           </select>
-          {/* <input type="date" className="bg-white dark:bg-[#1e2330] dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest outline-none" /> */}
         </div>
       </div>
 
+      {/* --- ADD AGENT CENTER BUTTON & DROPDOWN --- */}
+      <div className="flex flex-col items-center">
+        <button 
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="px-8 py-3 bg-green-500 hover:bg-green-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all shadow-lg shadow-green-500/20"
+        >
+          {showAddForm ? 'Cancel New Agent' : 'Add Agent'}
+        </button>
+
+        {showAddForm && (
+          <div className="w-full mt-6 bg-white dark:bg-[#1e2330] border border-green-500/30 rounded-[2rem] p-8 animate-in fade-in slide-in-from-top-2 duration-300 shadow-xl">
+             <h5 className="text-[10px] font-black text-green-500 uppercase tracking-[0.2em] mb-6 text-center">Register New Team Member</h5>
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[8px] font-black text-slate-400 uppercase ml-2">Full Name</label>
+                  <input 
+                    type="text" 
+                    value={newAgent.name}
+                    onChange={(e) => setNewAgent({...newAgent, name: e.target.value})}
+                    placeholder="e.g. John Doe" 
+                    className="w-full bg-slate-50 dark:bg-black/20 dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-green-500" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[8px] font-black text-slate-400 uppercase ml-2">Email Address</label>
+                  <input 
+                    type="email" 
+                    value={newAgent.email}
+                    onChange={(e) => setNewAgent({...newAgent, email: e.target.value})}
+                    placeholder="john@garden.ai" 
+                    className="w-full bg-slate-50 dark:bg-black/20 dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-green-500" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[8px] font-black text-slate-400 uppercase ml-2">Password</label>
+                  <input 
+                    type="password" 
+                    value={newAgent.password}
+                    onChange={(e) => setNewAgent({...newAgent, password: e.target.value})}
+                    placeholder="••••••••" 
+                    className="w-full bg-slate-50 dark:bg-black/20 dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-green-500" 
+                  />
+                </div>
+             </div>
+             <div className="mt-8 flex justify-center">
+                <button 
+                  onClick={handleCreation}
+                  className="px-10 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-green-500 dark:hover:bg-green-500 dark:hover:text-white transition-all shadow-md"
+                >
+                  Create Agent
+                </button>
+             </div>
+          </div>
+        )}
+      </div>
+
       <div className="space-y-4">
-        {mockAgents.map((agent) => (
+        {agents.map((agent) => (
           <div key={agent.id} className="bg-white dark:bg-[#1e2330] rounded-[2rem] border border-slate-200 dark:border-white/10 overflow-hidden transition-all duration-500 shadow-sm">
             
             {/* Visible Part */}
@@ -233,11 +355,12 @@ export default function AgentsManagement() {
                 </div>
                 <div>
                   <h4 className="text-sm font-black dark:text-white leading-none">{agent.name}</h4>
-                  <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">{agent.email}</p>
+                  <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">{agent.user.email}</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+              {/* --------------------- */}
+              {/* <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
                 <div>
                   <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Hired</span>
                   <span className="text-[11px] font-bold dark:text-slate-200">{agent.hired}</span>
@@ -250,12 +373,12 @@ export default function AgentsManagement() {
                   <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Status</span>
                   <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase ${agent.status === 'active' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>{agent.status}</span>
                 </div>
-              </div>
+              </div> */}
 
               {/* ACTION BUTTONS */}
               <div className="flex items-center gap-3">
                 <button 
-                  onClick={() => toggleExpand(agent.id, 'modify')}
+                  onClick={() => toggleExpand(agent.id, 'modify', agent)}
                   className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-md border ${
                     expanded.id === agent.id && expanded.mode === 'modify' 
                     ? 'bg-amber-500 border-amber-500 text-white' 
@@ -264,7 +387,8 @@ export default function AgentsManagement() {
                 >
                   Modify User
                 </button>
-                <button 
+                {/* ---------------------- */}
+                {/* <button 
                   onClick={() => toggleExpand(agent.id, 'details')}
                   className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-md ${
                     expanded.id === agent.id && expanded.mode === 'details'
@@ -273,7 +397,7 @@ export default function AgentsManagement() {
                   }`}
                 >
                   {expanded.id === agent.id && expanded.mode === 'details' ? 'Hide Details' : 'See Details'}
-                </button>
+                </button> */}
               </div>
             </div>
 
@@ -285,10 +409,14 @@ export default function AgentsManagement() {
                     <div className="space-y-4">
                       <h5 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Administrative Actions</h5>
                       <div className="flex flex-wrap gap-3">
-                        <button className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500 text-amber-600 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all">
+                        {/* -------------------------------------------- */}
+                        {/* <button className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500 text-amber-600 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all">
                           Pause User
-                        </button>
-                        <button className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 hover:bg-red-500 text-red-600 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all">
+                        </button> */}
+                        <button 
+                          onClick={() => handleTerminate(agent)}
+                          className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 hover:bg-red-500 text-red-600 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                        >
                           Terminate
                         </button>
                       </div>
@@ -297,14 +425,17 @@ export default function AgentsManagement() {
                     <div className="flex-1 max-w-2xl">
                       <h5 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Edit Credentials</h5>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <input type="text" defaultValue={agent.name} placeholder="Name" className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none" />
-                        <input type="email" defaultValue={agent.email} placeholder="Email" className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none" />
-                        <input type="password" placeholder="New Password" className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none" />
+                        <input onChange={(e)=>setUpdatingInputs(curr => ({ ...curr, name: e.target.value }))} value={updatingInputs.name} id={`name-${agent.id}`} type="text" defaultValue={agent.name} placeholder="Name" className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none" />
+                        <input onChange={(e)=>setUpdatingInputs(curr => ({ ...curr, email: e.target.value }))} value={updatingInputs.email} id={`email-${agent.id}`} type="email" defaultValue={agent.email} placeholder="Email" className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none" />
+                        <input onChange={(e)=>setUpdatingInputs(curr => ({ ...curr, password: e.target.value }))} value={updatingInputs.password} type="password" placeholder="New Password" className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none" />
                       </div>
                     </div>
 
                     <div className="flex items-end">
-                      <button className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[9px] font-black uppercase rounded-xl hover:bg-green-500 transition-all">
+                      <button 
+                        onClick={() => handleUpdate(agent.id)}
+                        className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[9px] font-black uppercase rounded-xl hover:bg-green-500 transition-all"
+                      >
                         Save Changes
                       </button>
                     </div>
@@ -371,4 +502,3 @@ export default function AgentsManagement() {
     </div>
   );
 }
-
