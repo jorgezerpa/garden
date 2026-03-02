@@ -14,6 +14,8 @@ const navItems = [
   { id: 'team-heatmap', label: 'Team Heatmap', desc: 'Productivity Windows' },
   // { id: 'export-and-reporting', label: 'Export and Reporting', desc: 'CSV & PDF Engine' },
   { id: 'long-term-data-visualization', label: 'Long Term Data Visualization', desc: 'Behavioral Analytics' },
+  { id: 'integrations', label: 'Integrations', desc: 'Connect with 3rd party tool' },
+  { id: 'api-keys', label: 'API Keys', desc: 'Generate key-pair for authentications' },
 ];
 
 export function Sidebar({ activeItem = 'data-visualization', onNavigate }: SidebarProps) {

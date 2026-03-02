@@ -74,3 +74,65 @@ export const logoutUser = (path: string) => {
   // is great for clearing out any sensitive data left in memory (RAM).
   window.location.href = path; // @todo should receive redirection path as a param, cause is diff for managers or normal users
 };
+
+/**
+ * Calls POST /api/auth/get-public-key
+ */
+export const getPublicKey = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/get-public-key`, getAuthHeader());
+    return response.data;
+  } catch (error: any) {
+    // If error is 400, return null as requested
+    if (error.response?.status === 400) {
+      return null;
+    }
+    throw error.response?.data || new Error("Failed to fetch public key");
+  }
+};
+
+/**
+ * Calls POST /api/auth/generate-key-pair
+ * Generates a new key pair (public key - secret key)
+ */
+export const generateKeyPair = async () => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/generate-key-pair`, {}, getAuthHeader());  
+
+    // { publicKey, secretKey }
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || new Error("generation failed");
+  }
+};
+
+/**
+ * Calls DELETE /api/auth/delete-key-pair
+ */
+export const deleteKeyPair = async () => {
+  try {
+    const response = await axios.delete(`${API_BASE_URL}/delete-key-pair`, getAuthHeader());
+    // Returns status 203 based on your backend implementation
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || new Error("Deletion failed");
+  }
+};
+
+
+
+///////////////////
+///////////////////
+function getAuthHeader() {
+  const token = localStorage.getItem('jwt');
+  if(!token) {
+    logoutUser("/manager")
+    // throw new Error("Unauthorized")
+  }
+
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  };
+};
