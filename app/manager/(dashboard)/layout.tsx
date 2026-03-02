@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/shared/manager/Sidebar';
 
@@ -20,6 +20,13 @@ export default function AdminLayout({
     // e.g., app/admin/agents-management/page.tsx
     router.push(`/manager/${id}`);
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem('jwt');
+    if (!token) {
+      router.push('/manager/sign-in');
+    }
+  }, [router]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-[#0f1219] transition-colors duration-500">
