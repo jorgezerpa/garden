@@ -193,8 +193,8 @@ export default function AdminStats() {
         {/* <DailyActivityLineCharts /> */}
         {/* <PerBlockBarChart /> ----------------------- */}
         {/* <CallDurationHistogram /> */}
-        <SeedHeatmap />
-        <ConversionFunnelChart />
+        {/* <SeedHeatmap /> */}
+        {/* <ConversionFunnelChart /> */}
         <ConsistencyGraph />
       </main>
 
