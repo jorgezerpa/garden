@@ -1,38 +1,76 @@
 'use client'
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { getLongCallDistribution } from '@/apiHandlers/dataVis';
 import { 
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, Cell, Dot 
+  Tooltip, ResponsiveContainer, Cell 
 } from 'recharts';
-
-// Data structured according to the PDF histogram requirements
-const distributionData = [
-  { range: '0-1 min', count: 850 },
-  { range: '1-3 min', count: 620 },
-  { range: '3-5 min', count: 450 },
-  { range: '5-10 min', count: 310 },
-  { range: '10+ min', count: 120 },
-];
 
 const COLORS = ['#94a3b8', '#64748b', '#22c55e', '#16a34a', '#14532d'];
 
 export function CallDurationHistogram() {
+  // Helper to get today's date in YYYY-MM-DD
+  const getToday = () => new Date().toISOString().split('T')[0];
+
+  const [data, setData] = useState<{ range: string, count: number }[]>([])
+  const [fromDate, setFromDate] = useState(getToday());
+  const [toDate, setToDate] = useState(getToday());
+
+  useEffect(() => {
+    (async () => {
+      try {
+        // Re-fetches automatically when fromDate or toDate changes
+        const result = await getLongCallDistribution(fromDate, toDate)
+        setData(result)  
+      } catch (error) {
+        setData([])
+      }
+    })()
+  }, [fromDate, toDate])
+
   return (
     <div className="bg-white dark:bg-[#1e2330] p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-sm mt-8">
-      <div className="flex justify-between items-center mb-10">
+      {/* Header Section with Integrated Inputs */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
         <div>
           <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Long Call Distribution</h3>
           <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Duration Density & Trend Envelope</p>
         </div>
-        <div className="flex bg-slate-100 dark:bg-black/20 p-1 rounded-xl">
-           <span className="text-[9px] font-black px-3 py-1 text-green-500 uppercase tracking-widest">Histogram Mode</span>
+
+        <div className="flex items-center gap-4">
+          {/* Date Inputs Container */}
+          <div className="flex items-center gap-3 bg-slate-100 dark:bg-black/20 p-2 rounded-2xl border border-slate-200 dark:border-white/5">
+            <div className="flex flex-col px-2">
+              <label className="text-[9px] font-black text-slate-400 uppercase">From</label>
+              <input 
+                type="date" 
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="bg-transparent text-xs font-bold focus:outline-none dark:text-white cursor-pointer"
+              />
+            </div>
+            <div className="h-8 w-[1px] bg-slate-300 dark:bg-white/10" />
+            <div className="flex flex-col px-2">
+              <label className="text-[9px] font-black text-slate-400 uppercase">To</label>
+              <input 
+                type="date" 
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="bg-transparent text-xs font-bold focus:outline-none dark:text-white cursor-pointer"
+              />
+            </div>
+          </div>
+          
+          <div className="hidden lg:flex bg-slate-100 dark:bg-black/20 p-1 rounded-xl h-fit">
+             <span className="text-[9px] font-black px-3 py-1 text-green-500 uppercase tracking-widest">Histogram Mode</span>
+          </div>
         </div>
       </div>
 
       <div className="h-[380px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart 
-            data={distributionData} 
+            data={data} 
             margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.1} />
@@ -59,18 +97,16 @@ export function CallDurationHistogram() {
               }}
             />
             
-            {/* The Bars */}
             <Bar 
               dataKey="count" 
               radius={[12, 12, 0, 0]} 
               barSize={65}
             >
-              {distributionData.map((entry, index) => (
+              {data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} fillOpacity={0.8} />
               ))}
             </Bar>
 
-            {/* The Trend Line connecting the tops */}
             <Line 
               type="monotone" 
               dataKey="count" 

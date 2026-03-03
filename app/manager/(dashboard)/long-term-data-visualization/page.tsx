@@ -190,8 +190,8 @@ export default function AdminStats() {
             ))}
         </div>
 
-        <DailyActivityLineCharts />
-        <PerBlockBarChart />
+        {/* <DailyActivityLineCharts /> */}
+        {/* <PerBlockBarChart /> ----------------------- */}
         <CallDurationHistogram />
         <SeedHeatmap />
         <ConversionFunnelChart />
