@@ -192,7 +192,7 @@ export default function AdminStats() {
 
         {/* <DailyActivityLineCharts /> */}
         {/* <PerBlockBarChart /> ----------------------- */}
-        <CallDurationHistogram />
+        {/* <CallDurationHistogram /> */}
         <SeedHeatmap />
         <ConversionFunnelChart />
         <ConsistencyGraph />
