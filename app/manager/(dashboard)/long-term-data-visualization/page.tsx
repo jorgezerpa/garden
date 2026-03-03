@@ -191,11 +191,11 @@ export default function AdminStats() {
         </div>
 
         {/* <DailyActivityLineCharts /> */}
-        {/* <PerBlockBarChart /> ----------------------- */}
+        <PerBlockBarChart /> 
         {/* <CallDurationHistogram /> */}
         {/* <SeedHeatmap /> */}
         {/* <ConversionFunnelChart /> */}
-        <ConsistencyGraph />
+        {/* <ConsistencyGraph /> */}
       </main>
 
       <footer className="mt-8 flex justify-between px-4 opacity-30 text-[9px] font-black uppercase tracking-widest border-t border-slate-200 dark:border-white/5 pt-8">
