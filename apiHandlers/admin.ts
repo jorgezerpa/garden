@@ -30,12 +30,14 @@ export interface CreateAgentData {
   email: string;
   name: string;
   password: string;
+  leadDeskId: string
 }
 
 export interface UpdateAgentData {
   name?: string;
   email?: string;
   password?: string;
+  leadDeskId?: string
 }
 
 export const addManager = async (data: CreateManagerData) => {

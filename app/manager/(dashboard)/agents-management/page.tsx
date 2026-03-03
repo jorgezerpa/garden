@@ -197,13 +197,13 @@ export default function AgentsManagement() {
   });
   
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newAgent, setNewAgent] = useState({ name: '', email: '', password: '' });
-  const [updatingInputs, setUpdatingInputs] = useState({ name: '', email: '', password: '' });
+  const [newAgent, setNewAgent] = useState({ name: '', email: '', password: '', leadDeskId: '' });
+  const [updatingInputs, setUpdatingInputs] = useState({ name: '', email: '', password: '', leadDeskId: '' });
 
   useEffect(()=>{
     (async()=>{
       try {
-        const agents = await getAgentsList(1, 10)
+        const agents = await getAgentsList(1, 200)
         setAgents(agents.data)
       } catch (error) {
         console.log(error)
@@ -215,21 +215,21 @@ export default function AgentsManagement() {
   const toggleExpand = (id: number, mode: 'details' | 'modify', agent?: any) => { // @todo create agent type
     if (expanded.id === id && expanded.mode === mode) {
       setExpanded({ id: null, mode: null });
-      setUpdatingInputs({ email: "", name: "", password: "" })
+      setUpdatingInputs({ email: "", name: "", password: "", leadDeskId: "" })
     } else {
       setExpanded({ id, mode });
-      if(agent) setUpdatingInputs({ email: agent.user.email, name: agent.name, password: "" })
+      if(agent) setUpdatingInputs({ email: agent.user.email, name: agent.name, password: "", leadDeskId: "" })
     }
   };
 
   const handleCreation = async() => {
     try {
-      await addAgent({ name: newAgent.name, email: newAgent.email, password: newAgent.password })
+      await addAgent({ name: newAgent.name, email: newAgent.email, password: newAgent.password, leadDeskId: newAgent.leadDeskId })
       
-      const agents = await getAgentsList(1, 10)
+      const agents = await getAgentsList(1, 200)
       setAgents(agents.data)
 
-      setNewAgent({ name: '', email: '', password: '' });
+      setNewAgent({ name: '', email: '', password: '', leadDeskId: '' });
       setShowAddForm(false);
     } catch (error) {
       // @todo
@@ -240,7 +240,7 @@ export default function AgentsManagement() {
   const handleTerminate = async(agent: any) => {
     try {
       await removeAgent(agent.id)
-      const agents = await getAgentsList(1, 10)
+      const agents = await getAgentsList(1, 200)
       setAgents(agents.data)
     } catch (error) { // @todo
       console.log(error)
@@ -251,8 +251,8 @@ export default function AgentsManagement() {
     // In a real app, you'd pull these from a ref or local state for that specific agent
     // For this log task, we'll log the ID and the intent to update
     try {
-      await editAgent(id, { email: updatingInputs.email, name: updatingInputs.name, password: updatingInputs.password })
-      const agents = await getAgentsList(1, 10)
+      await editAgent(id, { email: updatingInputs.email, name: updatingInputs.name, password: updatingInputs.password, leadDeskId: updatingInputs.leadDeskId })
+      const agents = await getAgentsList(1, 200)
       setAgents(agents.data)
     } catch (error) {
       console.log(error) // todo
@@ -317,6 +317,16 @@ export default function AgentsManagement() {
                     value={newAgent.email}
                     onChange={(e) => setNewAgent({...newAgent, email: e.target.value})}
                     placeholder="john@garden.ai" 
+                    className="w-full bg-slate-50 dark:bg-black/20 dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-green-500" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[8px] font-black text-slate-400 uppercase ml-2">LeadDesk Id</label>
+                  <input 
+                    type="string" 
+                    value={newAgent.leadDeskId}
+                    onChange={(e) => setNewAgent({...newAgent, leadDeskId: e.target.value})}
+                    placeholder="4444" 
                     className="w-full bg-slate-50 dark:bg-black/20 dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-green-500" 
                   />
                 </div>
@@ -407,7 +417,7 @@ export default function AgentsManagement() {
                 <div className="p-6 bg-slate-50 dark:bg-white/5 rounded-[2rem] border border-dashed border-slate-200 dark:border-white/10">
                   <div className="flex flex-col xl:flex-row gap-8 justify-between">
                     <div className="space-y-4">
-                      <h5 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Administrative Actions</h5>
+                      <h5 className="text-[13px] font-black text-slate-400 uppercase tracking-[0.2em]">Administrative Actions</h5>
                       <div className="flex flex-wrap gap-3">
                         {/* -------------------------------------------- */}
                         {/* <button className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500 text-amber-600 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all">
@@ -423,11 +433,21 @@ export default function AgentsManagement() {
                     </div>
 
                     <div className="flex-1 max-w-2xl">
-                      <h5 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Edit Credentials</h5>
+                      <h5 className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Edit Credentials</h5>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <input onChange={(e)=>setUpdatingInputs(curr => ({ ...curr, name: e.target.value }))} value={updatingInputs.name} id={`name-${agent.id}`} type="text" defaultValue={agent.name} placeholder="Name" className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none" />
                         <input onChange={(e)=>setUpdatingInputs(curr => ({ ...curr, email: e.target.value }))} value={updatingInputs.email} id={`email-${agent.id}`} type="email" defaultValue={agent.email} placeholder="Email" className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none" />
                         <input onChange={(e)=>setUpdatingInputs(curr => ({ ...curr, password: e.target.value }))} value={updatingInputs.password} type="password" placeholder="New Password" className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none" />
+                      </div>
+                    </div>
+
+                    <div className="flex-1 max-w-2xl">
+                      <h5 className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Edit Third-parties connection IDs</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">  
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase">LeadDesk ID</label>
+                          <input onChange={(e)=>setUpdatingInputs(curr => ({ ...curr, leadDeskId: e.target.value }))} value={agent.leadDeskId} id={`leaddeskid-${agent.id}`} type="text" defaultValue={agent.agentToThird[0].agentServiceIdentifier} placeholder="LeadDesk Id" className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none" />
+                        </div>                   
                       </div>
                     </div>
 

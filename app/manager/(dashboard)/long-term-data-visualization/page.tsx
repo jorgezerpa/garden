@@ -1,16 +1,12 @@
 'use client'
-import React, { useState, useEffect } from 'react';
-import { useTheme } from 'next-themes';
-import { 
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, FunnelChart, Funnel, LabelList 
-} from 'recharts';
+import { useState, useEffect } from 'react';
 import { DailyActivityLineChart } from '@/components/manager/DailyActivityLineChart';
 import { PerBlockBarChart } from '@/components/manager/PerBlockBarChart';
 import { CallDurationHistogram } from '@/components/manager/CallsDurationHistogram';
 import { SeedHeatmap } from '@/components/manager/SeedsHeatmap';
 import { ConversionFunnelChart } from '@/components/manager/ConversionFunnelChart';
 import { ConsistencyGraph } from '@/components/manager/ConsistencyGraph';
+import { getAgentsList } from '@/apiHandlers/admin';
 
 // --- Mock Data ---
 const users = Array.from({ length: 24 }, (_, i) => ({
@@ -21,7 +17,6 @@ const users = Array.from({ length: 24 }, (_, i) => ({
 }));
 
 export default function AdminStats() {
-  const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [viewMode, setViewMode] = useState<'group' | 'user'>('group');
   const [timeRange, setTimeRange] = useState('Last 7 Days');
@@ -29,8 +24,18 @@ export default function AdminStats() {
 
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
+  
+  ///////////////// data fetching
+  useEffect(()=>{
+    (async()=>{
+      const response = await getAgentsList(1,50)
+      
+    })()
+  }, [])
 
-  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
+
+  ///////////////// data fetching ends
+
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-[#0f1219] p-4 md:p-8 transition-colors duration-500 font-sans text-slate-800 dark:text-slate-200">
