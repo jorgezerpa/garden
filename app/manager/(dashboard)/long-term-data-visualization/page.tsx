@@ -8,34 +8,28 @@ import { ConversionFunnelChart } from '@/components/manager/ConversionFunnelChar
 import { ConsistencyGraph } from '@/components/manager/ConsistencyGraph';
 import { getAgentsList } from '@/apiHandlers/admin';
 
-// --- Mock Data ---
-const users = Array.from({ length: 24 }, (_, i) => ({
-  id: i,
-  name: `Agent ${i + 1}`,
-  email: `agent${i + 1}@garden.com`,
-  status: 'Active'
-}));
 
 export default function AdminStats() {
   const [mounted, setMounted] = useState(false);
   const [viewMode, setViewMode] = useState<'group' | 'user'>('group');
   const [timeRange, setTimeRange] = useState('Last 7 Days');
   const [searchQuery, setSearchQuery] = useState('');
+  //
+  const [agents, setAgents] = useState<{ id: number, name: string, email:string}[]>([])
 
   useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
   
   ///////////////// data fetching
   useEffect(()=>{
     (async()=>{
-      const response = await getAgentsList(1,50)
-      
+      const response = await getAgentsList(1,200)
+      setAgents(response.data || [])
     })()
   }, [])
 
-
   ///////////////// data fetching ends
 
+  if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-[#0f1219] p-4 md:p-8 transition-colors duration-500 font-sans text-slate-800 dark:text-slate-200">
@@ -78,7 +72,7 @@ export default function AdminStats() {
                   viewMode === mode ? 'bg-white dark:bg-white/10 text-green-500 shadow-sm' : 'text-slate-400'
                 }`}
               >
-                {mode === 'group' ? 'General Group' : 'Per User'}
+                {mode === 'group' ? 'General Group' : 'Per Agents'}
               </button>
             ))}
           </div>
@@ -119,7 +113,7 @@ export default function AdminStats() {
           <div className="bg-slate-200/30 dark:bg-black/20 rounded-[2.5rem] p-6 border border-slate-200 dark:border-white/5">
             <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide snap-x">
               <div className="grid grid-rows-3 grid-flow-col gap-4">
-                {users.filter(u => u.name.toLowerCase().includes(searchQuery.toLowerCase())).map((user) => (
+                {agents.filter(u => u.name.toLowerCase().includes(searchQuery.toLowerCase())).map((user) => (
                   <div key={user.id} className="w-64 snap-start bg-white dark:bg-[#1e2330] p-4 rounded-[1.5rem] border border-slate-200 dark:border-white/10 shadow-sm hover:border-green-500/50 transition-all group">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex flex-col">
