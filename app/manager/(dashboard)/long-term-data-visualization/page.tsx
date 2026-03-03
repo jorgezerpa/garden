@@ -1,12 +1,13 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { DailyActivityLineChart } from '@/components/manager/DailyActivityLineChart';
+import { DailyActivityLineCharts } from '@/components/manager/DailyActivityLineChart';
 import { PerBlockBarChart } from '@/components/manager/PerBlockBarChart';
 import { CallDurationHistogram } from '@/components/manager/CallsDurationHistogram';
 import { SeedHeatmap } from '@/components/manager/SeedsHeatmap';
 import { ConversionFunnelChart } from '@/components/manager/ConversionFunnelChart';
 import { ConsistencyGraph } from '@/components/manager/ConsistencyGraph';
 import { getAgentsList } from '@/apiHandlers/admin';
+import { getDailyActivity, getBlockPerformance, getLongCallDistribution, getSeedTimelineHeatmap, getConversionFunnel, getConsistencyStreak } from '@/apiHandlers/dataVis';
 
 
 export default function AdminStats() {
@@ -22,8 +23,21 @@ export default function AdminStats() {
   ///////////////// data fetching
   useEffect(()=>{
     (async()=>{
-      const response = await getAgentsList(1,200)
-      setAgents(response.data || [])
+      if(viewMode=="user") {
+        const response = await getAgentsList(1,200)
+        setAgents(response.data || [])
+      }
+    })()
+  }, [viewMode])
+
+  useEffect(()=>{
+    (async()=>{
+      // await getDailyActivity("2024-05-01", "2024-10-01")  
+      // await getBlockPerformance(1, "2024-05-01", "2024-05-31")
+      // await getLongCallDistribution("2024-05-01", "2024-10-01")
+      // await getSeedTimelineHeatmap("2024-05-01", "2024-10-01")
+      // await getConversionFunnel("2024-05-01", "2024-10-01")
+      // await getConsistencyStreak(1,"2024-05-01", "2024-10-01") //
     })()
   }, [])
 
@@ -176,7 +190,7 @@ export default function AdminStats() {
             ))}
         </div>
 
-        <DailyActivityLineChart />
+        <DailyActivityLineCharts />
         <PerBlockBarChart />
         <CallDurationHistogram />
         <SeedHeatmap />
