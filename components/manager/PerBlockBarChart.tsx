@@ -44,7 +44,7 @@ export function PerBlockBarChart() {
         setData([]);
       }
     })();
-  }, [fromDate, toDate, activeDays, activeTypes]);
+  }, [fromDate, toDate, activeDays, activeTypes, selectedSchemaId]);
 
   useEffect(()=>{
     (async()=>{
@@ -54,8 +54,6 @@ export function PerBlockBarChart() {
   },[])
 
   const schemaChanged = (id: number) => {
-    console.log("Schema Changed! Current ID:", id);
-    // You can add more logic here, like refetching data based on schema
     setSelectedSchemaId(id);
   };
 
