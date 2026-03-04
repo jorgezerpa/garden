@@ -5,7 +5,7 @@ import {
   FunnelChart, Funnel, Tooltip, ResponsiveContainer, LabelList, Cell 
 } from 'recharts';
 
-export function ConversionFunnelChart() {
+export function ConversionFunnelChart({triggerPerAgentSearch, agentsSelected}:{triggerPerAgentSearch:boolean, agentsSelected:number[]}) {
   const getToday = () => new Date().toISOString().split('T')[0];
 
   const [data, setData] = useState<{ value: number, name: string, fill: string, sub: string }[]>([]);
@@ -15,13 +15,13 @@ export function ConversionFunnelChart() {
   useEffect(() => {
     (async () => {
       try {
-        const result = await getConversionFunnel(fromDate, toDate);
+        const result = await getConversionFunnel(fromDate, toDate, { agents: agentsSelected });
         setData(result);
       } catch (error) {
         setData([]);
       }
     })();
-  }, [fromDate, toDate]);
+  }, [fromDate, toDate, triggerPerAgentSearch]);
 
   // Dynamic Calculations based on data
   const calculateYield = () => {

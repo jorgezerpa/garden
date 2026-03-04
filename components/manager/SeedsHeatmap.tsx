@@ -1,23 +1,35 @@
 'use client'
 import React, { useState, useEffect } from 'react';
-import { getSeedTimelineHeatmap } from '@/apiHandlers/dataVis';
+import { getSeedTimelineHeatmap, getSeedTimelineHeatmapPerDay } from '@/apiHandlers/dataVis';
 
-const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const monthLabels = ['Jan', 'Jun', 'Dec'];
 
-export function SeedHeatmap() {
-  const getToday = () => new Date().toISOString().split('T')[0];
+// Define the hourly data interface based on your specific response format
+interface HourlyData {
+  hour: number;
+  intensity: number;
+  seeds: number;
+  label: string;
+}
 
-  const [data, setData] = useState<{ date: string, intensity: number, seeds: number, talkTime: number }[]>([]);
-  const [fromDate, setFromDate] = useState(getToday());
-  const [toDate, setToDate] = useState(getToday());
+export function SeedHeatmap({triggerPerAgentSearch, agentsSelected}:{triggerPerAgentSearch:boolean, agentsSelected:number[]}) {
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [data, setData] = useState<{ date: Date, intensity: number, seeds: number }[]>([]);
   const [selectedDay, setSelectedDay] = useState<any>(null);
+  const [hourlyData, setHourlyData] = useState<HourlyData[]>([]);
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
+
+  // Helper to format Date object to YYYY-MM-DD string
+  const formatDateToString = (date: Date) => {
+    return date.toISOString().split('T')[0];
+  };
 
   useEffect(() => {
     (async () => {
       try {
-        const result = await getSeedTimelineHeatmap(fromDate, toDate);
-        // Ensure we parse the date strings into Date objects for the UI logic
+        const result = await getSeedTimelineHeatmap(selectedYear, { agents: agentsSelected });
         const formattedResult = result.map((d: any) => ({
           ...d,
           date: new Date(d.date)
@@ -30,7 +42,22 @@ export function SeedHeatmap() {
         setData([]);
       }
     })();
-  }, [fromDate, toDate]);
+  }, [selectedYear, triggerPerAgentSearch]);
+
+  // Updated Hourly Drill-down Effect with string date conversion
+  useEffect(() => {
+    if (!selectedDay) return;
+    (async () => {
+      try {
+        // Convert the Date object to "YYYY-MM-DD" string
+        const dateString = formatDateToString(selectedDay.date);
+        const result = await getSeedTimelineHeatmapPerDay(dateString, { agents: agentsSelected });
+        setHourlyData(result);
+      } catch (error) {
+        setHourlyData([]);
+      }
+    })();
+  }, [selectedDay, agentsSelected]);
 
   const getIntensityClass = (level: number) => {
     switch (level) {
@@ -45,70 +72,53 @@ export function SeedHeatmap() {
 
   return (
     <div className="bg-white dark:bg-[#1e2330] p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-sm mt-8">
-      {/* --- Header & Date Pickers --- */}
+      {/* --- Header & Year Picker --- */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-10 gap-6">
         <div>
           <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Seed Timeline Heatmap</h3>
           <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Behavioral Consistency Tracker</p>
         </div>
 
-        {/* Reusable Date Input Design */}
-        <div className="flex items-center gap-3 bg-slate-50 dark:bg-black/20 p-2 rounded-2xl border border-slate-200 dark:border-white/10">
-          <div className="flex flex-col px-2">
-            <label className="text-[9px] font-black text-slate-400 uppercase">From</label>
-            <input 
-              type="date" 
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="bg-transparent text-xs font-bold focus:outline-none dark:text-white cursor-pointer"
-            />
+        <div className="flex items-center gap-3 bg-slate-50 dark:bg-black/20 p-2 px-4 rounded-2xl border border-slate-200 dark:border-white/10">
+          <div className="flex flex-col">
+            <label className="text-[9px] font-black text-slate-400 uppercase">Selected Year</label>
+            <select 
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="bg-transparent text-xs font-bold focus:outline-none dark:text-white cursor-pointer appearance-none pr-4"
+            >
+              {years.map(year => (
+                <option key={year} value={year} className="dark:bg-[#1e2330]">{year}</option>
+              ))}
+            </select>
           </div>
-          <div className="h-8 w-[1px] bg-slate-200 dark:bg-white/10" />
-          <div className="flex flex-col px-2">
-            <label className="text-[9px] font-black text-slate-400 uppercase">To</label>
-            <input 
-              type="date" 
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="bg-transparent text-xs font-bold focus:outline-none dark:text-white cursor-pointer"
-            />
-          </div>
+          <div className="text-slate-400 text-[10px]">▼</div>
         </div>
       </div>
 
       {/* --- The Heatmap Grid --- */}
-      <div className="flex gap-3">
-        {/* Y-Axis Labels (Days) */}
-        <div className="flex flex-col justify-between py-1 h-[116px] text-[8px] font-black uppercase text-slate-400">
-          <span>Mon</span>
-          <span>Wed</span>
-          <span>Fri</span>
-        </div>
-
-        <div className="flex-1 overflow-x-auto pb-6 scrollbar-hide">
+      <div className="flex-1 overflow-x-auto pb-6 scrollbar-hide">
+        <div className="w-fit min-w-full lg:min-w-0">
           <div className="inline-grid grid-flow-col grid-rows-7 gap-1.5">
             {data.map((day, idx) => (
               <button
                 key={idx}
                 onClick={() => setSelectedDay(day)}
                 className={`w-3.5 h-3.5 rounded-sm transition-all duration-200 hover:scale-125 hover:z-10 ${getIntensityClass(day.intensity)} 
-                  ${selectedDay?.date.getTime() === new Date(day.date).getTime() ? 'ring-2 ring-green-500 ring-offset-2 dark:ring-offset-[#1e2330]' : ''}`}
+                  ${selectedDay?.date.getTime() === day.date.getTime() ? 'ring-2 ring-green-500 ring-offset-2 dark:ring-offset-[#1e2330]' : ''}`}
               />
             ))}
           </div>
-          
-          {/* X-Axis Labels (Dynamic Month Indicators) */}
-          <div className="flex mt-3 text-[9px] font-black uppercase text-slate-400 tracking-widest border-t border-slate-100 dark:border-white/5 pt-2">
-             {/* Using a simplified layout for the labels based on data length */}
-             {monthLabels.map((m, i) => (
-               <span key={i} className="flex-1 text-center opacity-40 hover:opacity-100 transition-opacity cursor-default">{m}</span>
-             ))}
+          <div className="flex justify-between mt-3 text-[9px] font-black uppercase text-slate-400 tracking-widest border-t border-slate-100 dark:border-white/5 pt-2">
+            {monthLabels.map((m, i) => (
+              <span key={i} className="opacity-40 hover:opacity-100 transition-opacity cursor-default px-1">{m}</span>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* --- Footer / Legend & Selected Day Info --- */}
-      <div className="mt-8 pt-8 border-t border-slate-100 dark:border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+      {/* --- Footer / Legend & Hourly Drill-down --- */}
+      <div className="mt-8 pt-8 border-t border-slate-100 dark:border-white/5 flex flex-col md:flex-row justify-between items-end gap-6">
         <div className="flex items-center gap-2">
           <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mr-2">Less</span>
           {[0, 1, 2, 3, 4].map(i => <div key={i} className={`w-3 h-3 rounded-sm ${getIntensityClass(i)}`} />)}
@@ -116,19 +126,45 @@ export function SeedHeatmap() {
         </div>
 
         {selectedDay && (
-          <div className="bg-slate-50 dark:bg-black/40 px-6 py-3 rounded-2xl flex items-center gap-8 border border-slate-100 dark:border-white/5 animate-in fade-in zoom-in duration-300">
-             <div className="flex flex-col">
-               <span className="text-[8px] font-black uppercase text-slate-400">Date</span>
-               <span className="text-[11px] font-black">{selectedDay.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-             </div>
-             <div className="flex flex-col">
-               <span className="text-[8px] font-black uppercase text-green-500">Seeds</span>
-               <span className="text-sm font-black text-green-500">{selectedDay.seeds}</span>
-             </div>
-             <div className="flex flex-col">
-               <span className="text-[8px] font-black uppercase text-slate-400">Talk Time</span>
-               <span className="text-sm font-black">{Math.floor(selectedDay.talkTime/60)}h {selectedDay.talkTime%60}m</span>
-             </div>
+          <div className="bg-slate-50 dark:bg-black/40 p-5 rounded-3xl border border-slate-100 dark:border-white/5 flex flex-col gap-4 min-w-[320px] animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-3">
+              <div className="flex flex-col">
+                <span className="text-[8px] font-black uppercase text-slate-400">Activity for</span>
+                <span className="text-[11px] font-black uppercase">
+                  {selectedDay.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-[8px] font-black uppercase text-green-500">Total Seeds</span>
+                <span className="text-sm font-black text-green-500">{selectedDay.seeds}</span>
+              </div>
+            </div>
+
+            {/* Hourly 24-Block Grid */}
+            <div>
+              <span className="text-[8px] font-black uppercase text-slate-400 mb-2 block tracking-tighter">Hourly Intensity Breakdown</span>
+              <div className="grid grid-cols-12 gap-1">
+                {hourlyData.length > 0 ? (
+                  hourlyData.map((h) => (
+                    <div
+                      key={h.hour}
+                      title={`${h.label}: ${h.seeds} seeds`}
+                      className={`h-4 rounded-sm transition-colors duration-500 ${getIntensityClass(h.intensity)}`}
+                    />
+                  ))
+                ) : (
+                  // Skeleton state while fetching
+                  Array.from({ length: 24 }).map((_, i) => (
+                    <div key={i} className="h-4 bg-slate-200 dark:bg-white/5 rounded-sm animate-pulse" />
+                  ))
+                )}
+              </div>
+              <div className="flex justify-between mt-1.5 text-[7px] font-black text-slate-400 uppercase">
+                <span>00:00</span>
+                <span>12:00</span>
+                <span>23:00</span>
+              </div>
+            </div>
           </div>
         )}
       </div>

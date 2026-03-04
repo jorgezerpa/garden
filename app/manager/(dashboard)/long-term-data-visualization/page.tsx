@@ -13,14 +13,17 @@ import { getDailyActivity, getBlockPerformance, getLongCallDistribution, getSeed
 export default function AdminStats() {
   const [mounted, setMounted] = useState(false);
   const [viewMode, setViewMode] = useState<'group' | 'user'>('group');
-  const [timeRange, setTimeRange] = useState('Last 7 Days');
+  // const [timeRange, setTimeRange] = useState('Last 7 Days');
   const [searchQuery, setSearchQuery] = useState('');
   //
   const [agents, setAgents] = useState<{ id: number, name: string, email:string}[]>([])
+  const [agentsSelected, setAgentsSelected] = useState<number[]>([])
+  //
+  const [triggerPerAgentSearch, setTriggerPerAgentSearch] = useState(false)
+  const [enableSearchButton, setEnableSearchButton] = useState(false)
 
   useEffect(() => setMounted(true), []);
   
-  ///////////////// data fetching
   useEffect(()=>{
     (async()=>{
       if(viewMode=="user") {
@@ -30,20 +33,23 @@ export default function AdminStats() {
     })()
   }, [viewMode])
 
-  useEffect(()=>{
-    (async()=>{
-      // await getDailyActivity("2024-05-01", "2024-10-01")  
-      // await getBlockPerformance(1, "2024-05-01", "2024-05-31")
-      // await getLongCallDistribution("2024-05-01", "2024-10-01")
-      // await getSeedTimelineHeatmap("2024-05-01", "2024-10-01")
-      // await getConversionFunnel("2024-05-01", "2024-10-01")
-      // await getConsistencyStreak(1,"2024-05-01", "2024-10-01") //
-    })()
-  }, [])
+  const handleAgentSelection = (agentId: number) => {
+    setEnableSearchButton(true)
+    setAgentsSelected(curr => curr.includes(agentId) ? curr.filter(id => id!=agentId) : [...curr, agentId])
+  }
+  
+  const handleClearAgentSelection = () => {
+    setAgentsSelected([])
+    setEnableSearchButton(true)
+  }
 
-  ///////////////// data fetching ends
+  const handleTriggerPerAgentSearch = () => {
+    setTriggerPerAgentSearch(curr=>!curr)
+    setEnableSearchButton(false)
+  }
 
   if (!mounted) return null;
+
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-[#0f1219] p-4 md:p-8 transition-colors duration-500 font-sans text-slate-800 dark:text-slate-200">
@@ -81,7 +87,11 @@ export default function AdminStats() {
             {(['group', 'user'] as const).map((mode) => (
               <button
                 key={mode}
-                onClick={() => setViewMode(mode)}
+                onClick={() => {
+                  setViewMode(mode)
+                  setEnableSearchButton(false)
+                  setAgentsSelected([])
+                }}
                 className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
                   viewMode === mode ? 'bg-white dark:bg-white/10 text-green-500 shadow-sm' : 'text-slate-400'
                 }`}
@@ -91,10 +101,10 @@ export default function AdminStats() {
             ))}
           </div>
 
-          <div className="h-6 w-px bg-slate-200 dark:bg-white/10 hidden md:block" />
+          {/* <div className="h-6 w-px bg-slate-200 dark:bg-white/10 hidden md:block" /> */}
 
           {/* Time Range Selector */}
-          <div className="flex gap-2">
+          {/* <div className="flex gap-2">
             {['Today', 'Last 7 Days', 'Last 30 Days'].map((range) => (
               <button
                 key={range}
@@ -106,7 +116,7 @@ export default function AdminStats() {
                 {range}
               </button>
             ))}
-          </div>
+          </div> */}
         </div>
       </header>
 
@@ -124,6 +134,10 @@ export default function AdminStats() {
             <span className="absolute left-5 top-1/2 -translate-y-1/2 opacity-30">🔍</span>
           </div>
 
+          <div>
+            <p onClick={agentsSelected.length>0 ? handleClearAgentSelection : ()=>{}} className={`${agentsSelected.length==0 ? "opacity-35 cursor-not-allowed" : "cursor-pointer"} text-sm text-gray-800 dark:text-green-500 tracking-widest font-bold`}>Clear search</p>
+          </div>
+
           <div className="bg-slate-200/30 dark:bg-black/20 rounded-[2.5rem] p-6 border border-slate-200 dark:border-white/5">
             <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide snap-x">
               <div className="grid grid-rows-3 grid-flow-col gap-4">
@@ -134,7 +148,7 @@ export default function AdminStats() {
                         <span className="text-xs font-black text-slate-800 dark:text-white truncate">{user.name}</span>
                         <span className="text-[10px] text-slate-400 truncate">{user.email}</span>
                       </div>
-                      <input type="checkbox" className="accent-green-500 w-4 h-4 rounded-md cursor-pointer" />
+                      <input onChange={()=>handleAgentSelection(user.id)} checked={agentsSelected.includes(user.id)} type="checkbox" className="accent-green-500 w-4 h-4 rounded-md cursor-pointer" />
                     </div>
                     <div className="mt-2 pt-2 border-t border-slate-50 dark:border-white/5 flex justify-between items-center">
                       <span className="text-[8px] font-black uppercase text-green-500 tracking-widest">Select Agent</span>
@@ -148,23 +162,23 @@ export default function AdminStats() {
         </section>
       )}
 
-      {/* --- 4. Central Action Section (The Button) --- */}
-      <div className="flex flex-col items-center justify-center mb-12 mt-4 space-y-4">
-        <button className="relative group px-12 py-5 bg-green-500 hover:bg-green-600 text-white rounded-[2rem] transition-all hover:scale-105 active:scale-95 shadow-[0_20px_40px_-12px_rgba(34,197,94,0.4)] overflow-hidden">
-          {/* Pulsing Aura Effect */}
-          <div className="absolute inset-0 bg-white/20 scale-0 group-hover:scale-150 transition-transform duration-700 rounded-full" />
-          
-          <div className="relative flex items-center gap-4">
-            <svg className="w-5 h-5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            <span className="text-xs font-black uppercase tracking-[0.3em]">Update Search</span>
+      {
+        viewMode == "user" && (
+          <div className="flex flex-col items-center justify-center mb-12 mt-4 space-y-4">
+            <button disabled={!enableSearchButton} onClick={handleTriggerPerAgentSearch} className={`${enableSearchButton?"hover:scale-105":"opacity-35"} relative group px-10 py-3 bg-green-500 hover:bg-green-600 text-white rounded-4xl transition-all active:scale-95 shadow-[0_20px_40px_-12px_rgba(34,197,94,0.4)] overflow-hidden`}>
+              {/* Pulsing Aura Effect */}
+              <div className="absolute inset-0 bg-white/20 scale-0 group-hover:scale-150 transition-transform duration-700 rounded-full" />
+              
+              <div className="relative flex items-center gap-4">
+                <svg className="w-5 h-5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span className="text-xs font-black uppercase tracking-[0.3em]">Execute search per agents</span>
+              </div>
+            </button>
           </div>
-        </button>
-        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest opacity-60">
-          Execute query to refresh behavioral data
-        </p>
-      </div>
+        )
+      }
 
       {/* --- 5. Data Dashboard --- */}
       <main className="space-y-6">
@@ -190,12 +204,12 @@ export default function AdminStats() {
             ))}
         </div>
 
-        <DailyActivityLineCharts />
-        <PerBlockBarChart /> 
-        <CallDurationHistogram />
-        <SeedHeatmap />
-        <ConversionFunnelChart />
-        <ConsistencyGraph />
+        <DailyActivityLineCharts triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+        <PerBlockBarChart triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} /> 
+        <CallDurationHistogram triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+        <SeedHeatmap triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+        <ConversionFunnelChart triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+        <ConsistencyGraph triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
       </main>
 
       <footer className="mt-8 flex justify-between px-4 opacity-30 text-[9px] font-black uppercase tracking-widest border-t border-slate-200 dark:border-white/5 pt-8">

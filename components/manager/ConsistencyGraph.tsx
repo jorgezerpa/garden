@@ -6,7 +6,7 @@ import {
   Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea 
 } from 'recharts';
 
-export function ConsistencyGraph() {
+export function ConsistencyGraph({triggerPerAgentSearch, agentsSelected}:{triggerPerAgentSearch:boolean, agentsSelected:number[]}) {
   const getToday = () => new Date().toISOString().split('T')[0];
 
   const [data, setData] = useState<any[]>([]);
@@ -20,7 +20,7 @@ export function ConsistencyGraph() {
   useEffect(() => {
     (async () => {
       try {
-        const result = await getConsistencyStreak(1, fromDate, toDate);
+        const result = await getConsistencyStreak(1, fromDate, toDate, { agents: agentsSelected });
         setData(result.history || result); 
         setStreaks({
           current: result.currentStreak || 0,
@@ -30,7 +30,7 @@ export function ConsistencyGraph() {
         setData([]);
       }
     })();
-  }, [fromDate, toDate]);
+  }, [fromDate, toDate, triggerPerAgentSearch]);
 
   return (
     <div className="bg-white dark:bg-[#1e2330] p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-sm mt-8">

@@ -10,7 +10,7 @@ import { getSchemasList } from '@/apiHandlers/schema';
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const BLOCK_TYPES = ['WORKING', 'REST', 'EXTRA_TIME'];
 
-export function PerBlockBarChart() {
+export function PerBlockBarChart({triggerPerAgentSearch, agentsSelected}:{triggerPerAgentSearch:boolean, agentsSelected:number[]}) {
   const getToday = () => new Date().toISOString().split('T')[0];
 
   // States
@@ -25,7 +25,7 @@ export function PerBlockBarChart() {
   useEffect(() => {
     (async () => {
       try {
-        const result = await getBlockPerformance(selectedSchemaId, fromDate, toDate, { days:activeDays, types: activeTypes });
+        const result = await getBlockPerformance(selectedSchemaId, fromDate, toDate, { days:activeDays, types: activeTypes, agents:agentsSelected });
         
         // Transform the data so Recharts can find the keys
         const formattedData = result.map((item: any) => {
@@ -44,7 +44,7 @@ export function PerBlockBarChart() {
         setData([]);
       }
     })();
-  }, [fromDate, toDate, activeDays, activeTypes, selectedSchemaId]);
+  }, [fromDate, toDate, activeDays, activeTypes, selectedSchemaId, triggerPerAgentSearch]);
 
   useEffect(()=>{
     (async()=>{

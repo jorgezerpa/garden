@@ -25,20 +25,23 @@ const visClient = axios.create({
  */
 
 // GET /api/datavis/daily-activity
-export const getDailyActivity = async (from: string, to: string) => {
+export const getDailyActivity = async (from: string, to: string, filters: { agents?:number[] }) => {
   // /api/datavis/daily-activity
   const response = await visClient.get('/daily-activity', {
     ...getAuthHeader(),
-    params: { from, to },
+    params: { from, to, agents:filters.agents },
+    paramsSerializer: {
+      indexes: null
+    }
   });
   return response.data;
 };
 
 // GET /api/datavis/block-performance
-export const getBlockPerformance = async (schemaId: number, from: string, to: string, filters: { days:boolean[], types: boolean[] }) => {
+export const getBlockPerformance = async (schemaId: number, from: string, to: string, filters: { days:boolean[], types: boolean[], agents?:number[] }) => {
   const response = await visClient.get('/block-performance', {
     ...getAuthHeader(),
-    params: { schemaId, from, to, days: filters.days, types: filters.types },
+    params: { schemaId, from, to, days: filters.days, types: filters.types, agents:filters.agents },
     paramsSerializer: {
       indexes: null 
     }
@@ -48,37 +51,60 @@ export const getBlockPerformance = async (schemaId: number, from: string, to: st
 
 
 // GET /api/datavis/long-call-distribution
-export const getLongCallDistribution = async (from: string, to: string) => {
+export const getLongCallDistribution = async (from: string, to: string, filters: { agents?:number[] }) => {
   const response = await visClient.get('/long-call-distribution', {
     ...getAuthHeader(),
-    params: { from, to },
+    params: { from, to, agents:filters.agents },
+    paramsSerializer: {
+      indexes: null
+    }
   });
   return response.data;
 };
 
 // GET /api/datavis/seed-timeline-heatmap
-export const getSeedTimelineHeatmap = async (from: string, to: string) => {
+export const getSeedTimelineHeatmap = async (year:number, filters: { agents?:number[] }) => {
   const response = await visClient.get('/seed-timeline-heatmap', {
     ...getAuthHeader(),
-    params: { from, to },
+    params: { year, agents:filters.agents },
+    paramsSerializer: {
+      indexes: null
+    }
+  });
+  return response.data;
+};
+
+export const getSeedTimelineHeatmapPerDay = async (date:string, filters: { agents?:number[] }) => {
+  const response = await visClient.get('/seed-timeline-heatmap-per-day', {
+    ...getAuthHeader(),
+    params: { day:date, agents:filters.agents },
+    paramsSerializer: {
+      indexes: null
+    }
   });
   return response.data;
 };
 
 // GET /api/datavis/conversion-funnel
-export const getConversionFunnel = async (from: string, to: string) => {
+export const getConversionFunnel = async (from: string, to: string, filters: { agents?:number[] }) => {
   const response = await visClient.get('/conversion-funnel', {
     ...getAuthHeader(),
-    params: { from, to },
+    params: { from, to, agents: filters.agents },
+    paramsSerializer: {
+      indexes: null
+    }
   });
   return response.data;
 };
 
 // GET /api/datavis/consistency-streak
-export const getConsistencyStreak = async (goalId: number, from: string, to: string) => {
+export const getConsistencyStreak = async (goalId: number, from: string, to: string, filters: { agents?:number[] }) => {
   const response = await visClient.get('/consistency-streak', {
     ...getAuthHeader(),
-    params: { goalId, from, to },
+    params: { goalId, from, to, agents: filters.agents },
+    paramsSerializer: {
+      indexes: null
+    }
   });
   return response.data;
 };

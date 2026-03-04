@@ -8,7 +8,7 @@ import {
 
 const COLORS = ['#94a3b8', '#64748b', '#22c55e', '#16a34a', '#14532d'];
 
-export function CallDurationHistogram() {
+export function CallDurationHistogram({triggerPerAgentSearch, agentsSelected}:{triggerPerAgentSearch:boolean, agentsSelected:number[]}) {
   // Helper to get today's date in YYYY-MM-DD
   const getToday = () => new Date().toISOString().split('T')[0];
 
@@ -20,13 +20,13 @@ export function CallDurationHistogram() {
     (async () => {
       try {
         // Re-fetches automatically when fromDate or toDate changes
-        const result = await getLongCallDistribution(fromDate, toDate)
+        const result = await getLongCallDistribution(fromDate, toDate, { agents:agentsSelected })
         setData(result)  
       } catch (error) {
         setData([])
       }
     })()
-  }, [fromDate, toDate])
+  }, [fromDate, toDate, triggerPerAgentSearch])
 
   return (
     <div className="bg-white dark:bg-[#1e2330] p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-sm mt-8">

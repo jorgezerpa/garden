@@ -45,7 +45,7 @@ const MiniLineChart = ({ title, subtitle, data, dataKey, color, label }: any) =>
   </div>
 );
 
-export function DailyActivityLineCharts() {
+export function DailyActivityLineCharts({triggerPerAgentSearch, agentsSelected}:{triggerPerAgentSearch:boolean, agentsSelected:number[]}) {
   // Helper to get today's date in YYYY-MM-DD
   const getToday = () => new Date().toISOString().split('T')[0];
 
@@ -57,13 +57,13 @@ export function DailyActivityLineCharts() {
     (async () => {
       try {
         // Now re-fetches whenever fromDate or toDate changes
-        const result = await getDailyActivity(fromDate, toDate);
+        const result = await getDailyActivity(fromDate, toDate, { agents:agentsSelected });
         setData(result);
       } catch (error) {
         setData([]);
       }
     })();
-  }, [fromDate, toDate]); // Dependencies added here
+  }, [fromDate, toDate, triggerPerAgentSearch]); // Dependencies added here
 
   return (
     <div className='bg-white dark:bg-[#1e2330] p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-sm mt-8'>
