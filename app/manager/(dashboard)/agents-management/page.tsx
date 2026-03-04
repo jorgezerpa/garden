@@ -415,7 +415,7 @@ export default function AgentsManagement() {
             {expanded.id === agent.id && expanded.mode === 'modify' && (
               <div className="px-6 pb-8 pt-4 border-t border-slate-100 dark:border-white/5 animate-in slide-in-from-top-4 duration-500">
                 <div className="p-6 bg-slate-50 dark:bg-white/5 rounded-[2rem] border border-dashed border-slate-200 dark:border-white/10">
-                  <div className="flex flex-col xl:flex-row gap-8 justify-between">
+                  <div className="flex flex-col  gap-8 justify-between">
                     <div className="space-y-4">
                       <h5 className="text-[13px] font-black text-slate-400 uppercase tracking-[0.2em]">Administrative Actions</h5>
                       <div className="flex flex-wrap gap-3">

@@ -5,34 +5,70 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, Legend 
 } from 'recharts';
+import { getSchemasList } from '@/apiHandlers/schema';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const BLOCK_TYPES = ['WORKING', 'REST', 'EXTRA_TIME'];
 
 export function PerBlockBarChart() {
   const getToday = () => new Date().toISOString().split('T')[0];
 
   // States
   const [data, setData] = useState<any[]>([]);
+  const [schemas, setSchemas] = useState<{name:string, id:number}[]>([]);
+  const [selectedSchemaId, setSelectedSchemaId] = useState<number>(1); // default first schema
   const [fromDate, setFromDate] = useState(getToday());
   const [toDate, setToDate] = useState(getToday());
   const [activeDays, setActiveDays] = useState([true, true, true, true, true, false, false]); // Mon-Fri active by default
+  const [activeTypes, setActiveTypes] = useState([true, true, true]); // Mon-Fri active by default
 
   useEffect(() => {
     (async () => {
       try {
-        // Fetching with current state dates
-        const result = await getBlockPerformance(1, fromDate, toDate);
-        setData(result);
+        const result = await getBlockPerformance(selectedSchemaId, fromDate, toDate, { days:activeDays, types: activeTypes });
+        
+        // Transform the data so Recharts can find the keys
+        const formattedData = result.map((item: any) => {
+          const hours = Math.floor(item.blockStartTimeMinutesFromMidnight / 60);
+          const mins = item.blockStartTimeMinutesFromMidnight % 60;
+          const timeLabel = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+          
+          return {
+            ...item,
+            block: timeLabel, // This matches your <XAxis dataKey="block" />
+          };
+        });
+
+        setData(formattedData);
       } catch (error) {
         setData([]);
       }
     })();
-  }, [fromDate, toDate]);
+  }, [fromDate, toDate, activeDays, activeTypes]);
+
+  useEffect(()=>{
+    (async()=>{
+      const result = await getSchemasList()
+      setSchemas(result.data)
+    })()
+  },[])
+
+  const schemaChanged = (id: number) => {
+    console.log("Schema Changed! Current ID:", id);
+    // You can add more logic here, like refetching data based on schema
+    setSelectedSchemaId(id);
+  };
 
   const toggleDay = (index: number) => {
     const nextDays = [...activeDays];
     nextDays[index] = !nextDays[index];
     setActiveDays(nextDays);
+  };
+
+  const toggleType = (index: number) => {
+    const nextTypes = [...activeTypes];
+    nextTypes[index] = !nextTypes[index];
+    setActiveTypes(nextTypes);
   };
 
   return (
@@ -91,25 +127,52 @@ export function PerBlockBarChart() {
             ))}
           </div>
         </div>
+        
+        <div className="flex flex-col gap-3">
+          <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Block types:</span>
+          <div className="flex flex-wrap gap-2">
+            {BLOCK_TYPES.map((type, idx) => (
+              <button
+                key={type}
+                onClick={() => toggleType(idx)}
+                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all border ${
+                  activeTypes[idx] 
+                    ? 'bg-green-500 border-green-500 text-white shadow-[0_0_12px_rgba(34,197,94,0.3)]' 
+                    : 'bg-transparent border-slate-200 dark:border-white/10 text-slate-400 hover:border-slate-300'
+                  }`}
+              >
+                {type.toLowerCase()}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Schema Cards Grid (3 Columns) */}
+        <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Block Schemas</span>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center justify-between p-5 bg-slate-50 dark:bg-white/[0.02] rounded-3xl border border-slate-200 dark:border-white/5 hover:border-green-500/30 transition-all cursor-default group">
+          {schemas.map((s, i) => (
+            <label // Changed to label for better UX (clicking the card triggers the radio)
+              key={"schema"+i} 
+              className={`flex items-center justify-between p-5 bg-slate-50 dark:bg-white/[0.02] rounded-3xl border transition-all cursor-pointer group ${
+                selectedSchemaId === s.id ? 'border-green-500 ring-1 ring-green-500/20' : 'border-slate-200 dark:border-white/5 hover:border-green-500/30'
+              }`}
+            >
               <div>
                 <h4 className="text-[11px] font-black uppercase tracking-tight text-slate-700 dark:text-slate-200">
-                  Performance Schema {i === 1 ? 'Alpha' : i === 2 ? 'Beta' : 'Custom'}
+                  { s.name }
                 </h4>
-                <button className="text-[9px] font-bold uppercase text-green-500 mt-1 hover:underline underline-offset-4 decoration-2">
+                <button type="button" className="text-[9px] font-bold uppercase text-green-500 mt-1 hover:underline underline-offset-4 decoration-2">
                   See Details
                 </button>
               </div>
               <input 
                 type="radio" 
                 name="schema-group" 
+                checked={selectedSchemaId === s.id}
+                onChange={() => schemaChanged(s.id)} // Trigger function
                 className="w-4 h-4 accent-green-500 cursor-pointer"
               />
-            </div>
+            </label>
           ))}
         </div>
       </div>
@@ -122,7 +185,7 @@ export function PerBlockBarChart() {
           <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }} barGap={8}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.1} />
             <XAxis dataKey="block" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} dy={10} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} allowDecimals={false} />
             <Tooltip 
               cursor={{ fill: 'rgba(34, 197, 94, 0.05)' }}
               contentStyle={{ backgroundColor: '#1e2330', borderRadius: '16px', border: 'none', fontSize: '12px', fontWeight: 'bold' }}
@@ -137,7 +200,7 @@ export function PerBlockBarChart() {
             />
             <Bar dataKey="talkTime" fill="#22c55e" radius={[6, 6, 0, 0]} barSize={18} />
             <Bar dataKey="seeds" fill="#0ea5e9" radius={[6, 6, 0, 0]} barSize={18} />
-            <Bar dataKey="conversion" fill="#8b5cf6" radius={[6, 6, 0, 0]} barSize={18} />
+            <Bar dataKey="sales" fill="#8b5cf6" radius={[6, 6, 0, 0]} barSize={18} />
           </BarChart>
         </ResponsiveContainer>
       </div>

@@ -35,28 +35,17 @@ export const getDailyActivity = async (from: string, to: string) => {
 };
 
 // GET /api/datavis/block-performance
-export const getBlockPerformance = async (schemaId: number, from: string, to: string) => {
+export const getBlockPerformance = async (schemaId: number, from: string, to: string, filters: { days:boolean[], types: boolean[] }) => {
   const response = await visClient.get('/block-performance', {
     ...getAuthHeader(),
-    params: { schemaId, from, to },
+    params: { schemaId, from, to, days: filters.days, types: filters.types },
+    paramsSerializer: {
+      indexes: null 
+    }
   });
   return response.data;
 };
 
-// GET /api/datavis/block-performance-filtered
-export const getBlockPerformanceFiltered = async (
-  schemaId: number, 
-  from: string, 
-  to: string, 
-  fromDayIndex: number, 
-  toDayIndex: number
-) => {
-  const response = await visClient.get('/block-performance-filtered', {
-    ...getAuthHeader(),
-    params: { schemaId, from, to, fromDayIndex, toDayIndex },
-  });
-  return response.data;
-};
 
 // GET /api/datavis/long-call-distribution
 export const getLongCallDistribution = async (from: string, to: string) => {
