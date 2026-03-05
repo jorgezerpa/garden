@@ -14,12 +14,12 @@ interface HourlyData {
 
 export function SeedHeatmap({triggerPerAgentSearch, agentsSelected}:{triggerPerAgentSearch:boolean, agentsSelected:number[]}) {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [data, setData] = useState<{ date: Date, intensity: number, seeds: number }[]>([]);
   const [selectedDay, setSelectedDay] = useState<any>(null);
+  const [data, setData] = useState<{ date: Date, intensity: number, seeds: number }[]>([]);
   const [hourlyData, setHourlyData] = useState<HourlyData[]>([]);
 
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
+  const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
 
   // Helper to format Date object to YYYY-MM-DD string
   const formatDateToString = (date: Date) => {
@@ -30,34 +30,30 @@ export function SeedHeatmap({triggerPerAgentSearch, agentsSelected}:{triggerPerA
     (async () => {
       try {
         const result = await getSeedTimelineHeatmap(selectedYear, { agents: agentsSelected });
-        const formattedResult = result.map((d: any) => ({
-          ...d,
-          date: new Date(d.date)
-        }));
+        const formattedResult = result.map((d: any) => {
+          const [year, month, day] = d.date.split('-').map(Number);
+
+          return {
+            ...d,
+            date: new Date(year, month - 1, day, 0, 0, 0, 0)
+          }
+        });
+        
         setData(formattedResult);
-        if (formattedResult.length > 0) {
-          setSelectedDay(formattedResult[formattedResult.length - 1]);
-        }
+        
+        // if (formattedResult.length > 0) {
+        //   const lastDay = formattedResult[formattedResult.length - 1];
+        //   setSelectedDay(lastDay);
+        //   // Fetch initial hourly data for the default selected day
+        //   const dateString = formatDateToString(lastDay.date);
+        //   const hourlyResult = await getSeedTimelineHeatmapPerDay(dateString, { agents: agentsSelected });
+        //   setHourlyData(hourlyResult);
+        // }
       } catch (error) {
         setData([]);
       }
     })();
   }, [selectedYear, triggerPerAgentSearch]);
-
-  // Updated Hourly Drill-down Effect with string date conversion
-  useEffect(() => {
-    if (!selectedDay) return;
-    (async () => {
-      try {
-        // Convert the Date object to "YYYY-MM-DD" string
-        const dateString = formatDateToString(selectedDay.date);
-        const result = await getSeedTimelineHeatmapPerDay(dateString, { agents: agentsSelected });
-        setHourlyData(result);
-      } catch (error) {
-        setHourlyData([]);
-      }
-    })();
-  }, [selectedDay, agentsSelected]);
 
   const getIntensityClass = (level: number) => {
     switch (level) {
@@ -103,7 +99,16 @@ export function SeedHeatmap({triggerPerAgentSearch, agentsSelected}:{triggerPerA
             {data.map((day, idx) => (
               <button
                 key={idx}
-                onClick={() => setSelectedDay(day)}
+                onClick={async () => {
+                  setSelectedDay(day);
+                  try {
+                    const dateString = formatDateToString(day.date);
+                    const result = await getSeedTimelineHeatmapPerDay(dateString, { agents: agentsSelected });
+                    setHourlyData(result);
+                  } catch (error) {
+                    setHourlyData([]);
+                  }
+                }}
                 className={`w-3.5 h-3.5 rounded-sm transition-all duration-200 hover:scale-125 hover:z-10 ${getIntensityClass(day.intensity)} 
                   ${selectedDay?.date.getTime() === day.date.getTime() ? 'ring-2 ring-green-500 ring-offset-2 dark:ring-offset-[#1e2330]' : ''}`}
               />
@@ -147,7 +152,7 @@ export function SeedHeatmap({triggerPerAgentSearch, agentsSelected}:{triggerPerA
                 {hourlyData.length > 0 ? (
                   hourlyData.map((h) => (
                     <div
-                      key={h.hour}
+                      key={h.hour+"hourlyHeatmap"}
                       title={`${h.label}: ${h.seeds} seeds`}
                       className={`h-4 rounded-sm transition-colors duration-500 ${getIntensityClass(h.intensity)}`}
                     />
