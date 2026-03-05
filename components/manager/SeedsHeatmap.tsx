@@ -12,8 +12,8 @@ interface HourlyData {
   label: string;
 }
 
-export function SeedHeatmap({triggerPerAgentSearch, agentsSelected}:{triggerPerAgentSearch:boolean, agentsSelected:number[]}) {
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+export function SeedHeatmap({triggerPerAgentSearch, agentsSelected, lastCallDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], lastCallDate: string}) {
+  const [selectedYear, setSelectedYear] = useState<number>(new Date(lastCallDate).getFullYear());
   const [selectedDay, setSelectedDay] = useState<any>(null);
   const [data, setData] = useState<{ date: Date, intensity: number, seeds: number }[]>([]);
   const [hourlyData, setHourlyData] = useState<HourlyData[]>([]);

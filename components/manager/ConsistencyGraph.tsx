@@ -9,14 +9,14 @@ import { getCompanyGoals } from '@/apiHandlers/admin';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-export function ConsistencyGraph({triggerPerAgentSearch, agentsSelected}:{triggerPerAgentSearch:boolean, agentsSelected:number[]}) {
+export function ConsistencyGraph({triggerPerAgentSearch, agentsSelected, lastCallDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], lastCallDate: string}) {
   const getToday = () => new Date().toISOString().split('T')[0];
 
   const [data, setData] = useState<any[]>([]);
   const [goals, setGoals] = useState<{ name: string, id: number }[]>([])
   const [selectedGoal, setSelectedGoal] = useState<number>(1)
-  const [fromDate, setFromDate] = useState(getToday());
-  const [toDate, setToDate] = useState(getToday());
+  const [fromDate, setFromDate] = useState(lastCallDate);
+  const [toDate, setToDate] = useState(lastCallDate);
   const [streaks, setStreaks] = useState({ current: 0, best: 0 });
   const [activeDays, setActiveDays] = useState([true, true, true, true, true, false, false]); // Mon-Fri active by default
 

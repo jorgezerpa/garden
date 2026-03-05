@@ -5,12 +5,12 @@ import {
   FunnelChart, Funnel, Tooltip, ResponsiveContainer, LabelList, Cell 
 } from 'recharts';
 
-export function ConversionFunnelChart({triggerPerAgentSearch, agentsSelected}:{triggerPerAgentSearch:boolean, agentsSelected:number[]}) {
+export function ConversionFunnelChart({triggerPerAgentSearch, agentsSelected, lastCallDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], lastCallDate: string}) {
   const getToday = () => new Date().toISOString().split('T')[0];
 
   const [data, setData] = useState<{ value: number, name: string, fill: string, sub: string }[]>([]);
-  const [fromDate, setFromDate] = useState(getToday());
-  const [toDate, setToDate] = useState(getToday());
+  const [fromDate, setFromDate] = useState(lastCallDate);
+  const [toDate, setToDate] = useState(lastCallDate);
 
   useEffect(() => {
     (async () => {

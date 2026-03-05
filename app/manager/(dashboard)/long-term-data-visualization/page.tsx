@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { DailyActivityLineCharts } from '@/components/manager/DailyActivityLineChart';
 import { PerBlockBarChart } from '@/components/manager/PerBlockBarChart';
 import { CallDurationHistogram } from '@/components/manager/CallsDurationHistogram';
@@ -7,7 +7,8 @@ import { SeedHeatmap } from '@/components/manager/SeedsHeatmap';
 import { ConversionFunnelChart } from '@/components/manager/ConversionFunnelChart';
 import { ConsistencyGraph } from '@/components/manager/ConsistencyGraph';
 import { getAgentsList } from '@/apiHandlers/admin';
-import { getDailyActivity, getBlockPerformance, getLongCallDistribution, getSeedTimelineHeatmap, getConversionFunnel, getConsistencyStreak, getGeneralInsights } from '@/apiHandlers/dataVis';
+import { getDailyActivity, getBlockPerformance, getLongCallDistribution, getSeedTimelineHeatmap, getConversionFunnel, getConsistencyStreak, getGeneralInsights, getLastCallDate } from '@/apiHandlers/dataVis';
+import { GeneralInsights } from '@/components/manager/GeneralInsights';
 
 
 export default function AdminStats() {
@@ -22,23 +23,7 @@ export default function AdminStats() {
   const [triggerPerAgentSearch, setTriggerPerAgentSearch] = useState(false)
   const [enableSearchButton, setEnableSearchButton] = useState(false)
 
-  const [generalInsights, setGeneralInsights] = useState<{
-    totalTalkTime: number,
-    totalCalls: number,
-    totalSeeds: number,
-    totalLeads: number,
-    totalSales: number,
-    conversionRate: number,
-    avgCallDuration: number
-  }>({
-    totalTalkTime: 0,
-    totalCalls: 0,
-    totalSeeds: 0,
-    totalLeads: 0,
-    totalSales: 0,
-    conversionRate: 0,
-    avgCallDuration: 0
-  })
+  const [lastCallDate, setLastCallDate] = useState<string|null>(null)
 
   useEffect(() => setMounted(true), []);
   
@@ -54,20 +39,14 @@ export default function AdminStats() {
   useEffect(() => {
     (async () => {
       try {
-        const result = await getGeneralInsights("2024-01-01", "2024-06-01", { agents: agentsSelected });
-        setGeneralInsights({
-          totalTalkTime: result.totalTalkTime,
-          totalCalls: result.totalCalls,
-          totalSeeds: result.totalSeeds,
-          totalLeads: result.totalLeads,
-          totalSales: result.totalSales,
-          conversionRate: result.conversionRate,
-          avgCallDuration: result.avgCallDuration
-        })
+        const { lastCallDate:lcd } = await getLastCallDate()
+        setLastCallDate(new Date(lcd).toISOString().split('T')[0])
       } catch (error) {
+        console.log(error)
+        setLastCallDate(new Date().toISOString().split('T')[0])
       }
     })();
-  }, [triggerPerAgentSearch]);
+  }, []);
     
 
   const handleAgentSelection = (agentId: number) => {
@@ -219,34 +198,19 @@ export default function AdminStats() {
 
       {/* --- 5. Data Dashboard --- */}
       <main className="space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
-            {[
-                { label: 'Total Talk Time', val: generalInsights.totalTalkTime, sub: 'Effective duration', color: 'bg-green-500' },
-                { label: 'Total Calls', val: generalInsights.totalCalls, sub: 'Logged sessions', color: 'bg-emerald-500' },
-                { label: 'Total Seeds', val: generalInsights.totalSeeds, sub: 'Initial logging', color: 'bg-lime-500' },
-                { label: 'Total Leads', val: generalInsights.totalLeads, sub: 'Qualified interest', color: 'bg-green-400' },
-                { label: 'Total Sales', val: generalInsights.totalSales, sub: 'Closed conversions', color: 'bg-emerald-600' },
-                { label: 'Conversion Rate', val: generalInsights.conversionRate, sub: 'Seed-to-Sale', color: 'bg-green-600' },
-                { label: 'Avg Call Duration', val: generalInsights.avgCallDuration, sub: 'Baseline productivity', color: 'bg-lime-600' },
-            ].map((stat, i) => (
-                <div key={i} className="bg-white dark:bg-[#1e2330] p-5 rounded-[2rem] border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-                  <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition-opacity">
-                      <div className={`w-12 h-12 ${stat.color} rounded-full blur-xl`} />
-                  </div>
-                  <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 relative z-10 block mb-1">{stat.label}</span>
-                  <div className="text-xl font-black tracking-tighter text-slate-800 dark:text-white relative z-10">{stat.val}</div>
-                  <p className="text-[7px] text-slate-400 uppercase mt-2 tracking-widest font-bold opacity-80 relative z-10">{stat.sub}</p>
-                  <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 ${stat.color} opacity-20 rounded-t-full group-hover:w-16 transition-all`} />
-                </div>
-            ))}
-        </div>
-
-        <DailyActivityLineCharts triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
-        <PerBlockBarChart triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} /> 
-        <CallDurationHistogram triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
-        <SeedHeatmap triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
-        <ConversionFunnelChart triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
-        <ConsistencyGraph triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+        {
+          lastCallDate && (
+            <>
+              <GeneralInsights lastCallDate={lastCallDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+              <DailyActivityLineCharts lastCallDate={lastCallDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+              <PerBlockBarChart lastCallDate={lastCallDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} /> 
+              <CallDurationHistogram lastCallDate={lastCallDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+              <SeedHeatmap lastCallDate={lastCallDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+              <ConversionFunnelChart lastCallDate={lastCallDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+              <ConsistencyGraph lastCallDate={lastCallDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+            </>
+          )
+        }
       </main>
 
       <footer className="mt-8 flex justify-between px-4 opacity-30 text-[9px] font-black uppercase tracking-widest border-t border-slate-200 dark:border-white/5 pt-8">

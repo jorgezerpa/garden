@@ -45,13 +45,13 @@ const MiniLineChart = ({ title, subtitle, data, dataKey, color, label }: any) =>
   </div>
 );
 
-export function DailyActivityLineCharts({triggerPerAgentSearch, agentsSelected}:{triggerPerAgentSearch:boolean, agentsSelected:number[]}) {
+export function DailyActivityLineCharts({triggerPerAgentSearch, agentsSelected, lastCallDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], lastCallDate: string}) {
   // Helper to get today's date in YYYY-MM-DD
   const getToday = () => new Date().toISOString().split('T')[0];
 
   const [data, setData] = useState<any[]>([]);
-  const [fromDate, setFromDate] = useState(getToday());
-  const [toDate, setToDate] = useState(getToday());
+  const [fromDate, setFromDate] = useState(lastCallDate);
+  const [toDate, setToDate] = useState(lastCallDate);
 
   useEffect(() => {
     (async () => {

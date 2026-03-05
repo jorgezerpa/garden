@@ -10,15 +10,15 @@ import { getSchemasList } from '@/apiHandlers/schema';
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const BLOCK_TYPES = ['WORKING', 'REST', 'EXTRA_TIME'];
 
-export function PerBlockBarChart({triggerPerAgentSearch, agentsSelected}:{triggerPerAgentSearch:boolean, agentsSelected:number[]}) {
+export function PerBlockBarChart({triggerPerAgentSearch, agentsSelected, lastCallDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], lastCallDate: string}) {
   const getToday = () => new Date().toISOString().split('T')[0];
 
   // States
   const [data, setData] = useState<any[]>([]);
   const [schemas, setSchemas] = useState<{name:string, id:number}[]>([]);
   const [selectedSchemaId, setSelectedSchemaId] = useState<number>(1); // default first schema
-  const [fromDate, setFromDate] = useState(getToday());
-  const [toDate, setToDate] = useState(getToday());
+  const [fromDate, setFromDate] = useState(lastCallDate);
+  const [toDate, setToDate] = useState(lastCallDate);
   const [activeDays, setActiveDays] = useState([true, true, true, true, true, false, false]); // Mon-Fri active by default
   const [activeTypes, setActiveTypes] = useState([true, true, true]); // Mon-Fri active by default
 
