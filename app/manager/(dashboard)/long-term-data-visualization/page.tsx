@@ -7,7 +7,7 @@ import { SeedHeatmap } from '@/components/manager/SeedsHeatmap';
 import { ConversionFunnelChart } from '@/components/manager/ConversionFunnelChart';
 import { ConsistencyGraph } from '@/components/manager/ConsistencyGraph';
 import { getAgentsList } from '@/apiHandlers/admin';
-import { getDailyActivity, getBlockPerformance, getLongCallDistribution, getSeedTimelineHeatmap, getConversionFunnel, getConsistencyStreak } from '@/apiHandlers/dataVis';
+import { getDailyActivity, getBlockPerformance, getLongCallDistribution, getSeedTimelineHeatmap, getConversionFunnel, getConsistencyStreak, getGeneralInsights } from '@/apiHandlers/dataVis';
 
 
 export default function AdminStats() {
@@ -22,6 +22,24 @@ export default function AdminStats() {
   const [triggerPerAgentSearch, setTriggerPerAgentSearch] = useState(false)
   const [enableSearchButton, setEnableSearchButton] = useState(false)
 
+  const [generalInsights, setGeneralInsights] = useState<{
+    totalTalkTime: number,
+    totalCalls: number,
+    totalSeeds: number,
+    totalLeads: number,
+    totalSales: number,
+    conversionRate: number,
+    avgCallDuration: number
+  }>({
+    totalTalkTime: 0,
+    totalCalls: 0,
+    totalSeeds: 0,
+    totalLeads: 0,
+    totalSales: 0,
+    conversionRate: 0,
+    avgCallDuration: 0
+  })
+
   useEffect(() => setMounted(true), []);
   
   useEffect(()=>{
@@ -32,6 +50,25 @@ export default function AdminStats() {
       }
     })()
   }, [viewMode])
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const result = await getGeneralInsights("2024-01-01", "2024-06-01", { agents: agentsSelected });
+        setGeneralInsights({
+          totalTalkTime: result.totalTalkTime,
+          totalCalls: result.totalCalls,
+          totalSeeds: result.totalSeeds,
+          totalLeads: result.totalLeads,
+          totalSales: result.totalSales,
+          conversionRate: result.conversionRate,
+          avgCallDuration: result.avgCallDuration
+        })
+      } catch (error) {
+      }
+    })();
+  }, [triggerPerAgentSearch]);
+    
 
   const handleAgentSelection = (agentId: number) => {
     setEnableSearchButton(true)
@@ -184,13 +221,13 @@ export default function AdminStats() {
       <main className="space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
             {[
-                { label: 'Total Talk Time', val: '184h 12m', sub: 'Effective duration', color: 'bg-green-500' },
-                { label: 'Total Calls', val: '2,840', sub: 'Logged sessions', color: 'bg-emerald-500' },
-                { label: 'Total Seeds', val: '1,240', sub: 'Initial logging', color: 'bg-lime-500' },
-                { label: 'Total Leads', val: '412', sub: 'Qualified interest', color: 'bg-green-400' },
-                { label: 'Total Sales', val: '86', sub: 'Closed conversions', color: 'bg-emerald-600' },
-                { label: 'Conversion Rate', val: '12.4%', sub: 'Seed-to-Sale', color: 'bg-green-600' },
-                { label: 'Avg Call Duration', val: '4m 32s', sub: 'Baseline productivity', color: 'bg-lime-600' },
+                { label: 'Total Talk Time', val: generalInsights.totalTalkTime, sub: 'Effective duration', color: 'bg-green-500' },
+                { label: 'Total Calls', val: generalInsights.totalCalls, sub: 'Logged sessions', color: 'bg-emerald-500' },
+                { label: 'Total Seeds', val: generalInsights.totalSeeds, sub: 'Initial logging', color: 'bg-lime-500' },
+                { label: 'Total Leads', val: generalInsights.totalLeads, sub: 'Qualified interest', color: 'bg-green-400' },
+                { label: 'Total Sales', val: generalInsights.totalSales, sub: 'Closed conversions', color: 'bg-emerald-600' },
+                { label: 'Conversion Rate', val: generalInsights.conversionRate, sub: 'Seed-to-Sale', color: 'bg-green-600' },
+                { label: 'Avg Call Duration', val: generalInsights.avgCallDuration, sub: 'Baseline productivity', color: 'bg-lime-600' },
             ].map((stat, i) => (
                 <div key={i} className="bg-white dark:bg-[#1e2330] p-5 rounded-[2rem] border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
                   <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition-opacity">
@@ -204,11 +241,11 @@ export default function AdminStats() {
             ))}
         </div>
 
-        {/* <DailyActivityLineCharts triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+        <DailyActivityLineCharts triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
         <PerBlockBarChart triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} /> 
         <CallDurationHistogram triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
         <SeedHeatmap triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
-        <ConversionFunnelChart triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} /> */}
+        <ConversionFunnelChart triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
         <ConsistencyGraph triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
       </main>
 

@@ -24,6 +24,18 @@ const visClient = axios.create({
  * API Calls
  */
 
+// GET /api/datavis/general-insights
+export const getGeneralInsights = async (from: string, to: string, filters: { agents?:number[] }) => {
+  const response = await visClient.get('/general-insights', {
+    ...getAuthHeader(),
+    params: { from, to, agents:filters.agents },
+    paramsSerializer: {
+      indexes: null
+    }
+  });
+  return response.data;
+};
+
 // GET /api/datavis/daily-activity
 export const getDailyActivity = async (from: string, to: string, filters: { agents?:number[] }) => {
   // /api/datavis/daily-activity
