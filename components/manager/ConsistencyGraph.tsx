@@ -5,22 +5,23 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea 
 } from 'recharts';
+import { getCompanyGoals } from '@/apiHandlers/admin';
 
 export function ConsistencyGraph({triggerPerAgentSearch, agentsSelected}:{triggerPerAgentSearch:boolean, agentsSelected:number[]}) {
   const getToday = () => new Date().toISOString().split('T')[0];
 
   const [data, setData] = useState<any[]>([]);
+  const [goals, setGoals] = useState<{ name: string, id: number }[]>([])
+  const [selectedGoal, setSelectedGoal] = useState<number>(1)
   const [fromDate, setFromDate] = useState(getToday());
   const [toDate, setToDate] = useState(getToday());
   const [streaks, setStreaks] = useState({ current: 0, best: 0 });
   
-  // New States for Schema UI
-  const [frequency, setFrequency] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
   useEffect(() => {
     (async () => {
       try {
-        const result = await getConsistencyStreak(1, fromDate, toDate, { agents: agentsSelected });
+        const result = await getConsistencyStreak(selectedGoal, fromDate, toDate, { agents: agentsSelected });
         setData(result.history || result); 
         setStreaks({
           current: result.currentStreak || 0,
@@ -30,7 +31,18 @@ export function ConsistencyGraph({triggerPerAgentSearch, agentsSelected}:{trigge
         setData([]);
       }
     })();
-  }, [fromDate, toDate, triggerPerAgentSearch]);
+  }, [fromDate, toDate, selectedGoal, triggerPerAgentSearch]);
+  
+  useEffect(() => {
+    (async () => {
+      try {
+        const result = await getCompanyGoals();
+        setGoals(result)
+      } catch (error) {
+        setData([]);
+      }
+    })();
+  }, []);
 
   return (
     <div className="bg-white dark:bg-[#1e2330] p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-sm mt-8">
@@ -78,38 +90,20 @@ export function ConsistencyGraph({triggerPerAgentSearch, agentsSelected}:{trigge
 
       {/* --- Goal Schema Selector Section --- */}
       <div className="mb-10 space-y-6">
-        {/* Frequency Row */}
-        <div className="flex justify-center">
-          <div className="flex p-1 bg-slate-100 dark:bg-black/20 rounded-2xl border border-slate-200 dark:border-white/5">
-            {['daily', 'weekly', 'monthly'].map((opt) => (
-              <button
-                key={opt}
-                onClick={() => setFrequency(opt as any)}
-                className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                  frequency === opt 
-                    ? 'bg-white dark:bg-white/10 text-green-500 shadow-sm' 
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-                }`}
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Schema Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center justify-between p-5 bg-slate-50 dark:bg-white/[0.02] rounded-3xl border border-slate-200 dark:border-white/5 hover:border-green-500/30 transition-colors group">
+          {goals.map((goal) => (
+            <div onClick={()=>setSelectedGoal(goal.id)} key={"Goalsss"+goal.id} className="flex items-center justify-between p-5 bg-slate-50 dark:bg-white/[0.02] rounded-3xl border border-slate-200 dark:border-white/5 hover:border-green-500/30 transition-colors group">
               <div>
                 <h4 className="text-[11px] font-black uppercase tracking-tight text-slate-700 dark:text-slate-200">
-                  Schema Standard v{i}
+                  { goal.name }
                 </h4>
                 <button className="text-[9px] font-bold uppercase text-green-500 mt-1 hover:underline underline-offset-4">
                   See Details
                 </button>
               </div>
               <input 
+                checked={selectedGoal==goal.id}
                 type="radio" 
                 name="schema-select" 
                 className="w-4 h-4 accent-green-500 cursor-pointer"

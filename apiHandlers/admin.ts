@@ -120,7 +120,9 @@ export const createGoal = async (data: GoalData) => {
 };
 
 export const getCompanyGoals = async () => {
-  const response = await adminClient.get('/goals/company');
+  const response = await adminClient.get('/goals/company', {
+    ...getAuthHeader(),
+  });
   return response.data;
 };
 

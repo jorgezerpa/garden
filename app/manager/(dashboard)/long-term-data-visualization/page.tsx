@@ -204,11 +204,11 @@ export default function AdminStats() {
             ))}
         </div>
 
-        <DailyActivityLineCharts triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+        {/* <DailyActivityLineCharts triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
         <PerBlockBarChart triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} /> 
         <CallDurationHistogram triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
         <SeedHeatmap triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
-        <ConversionFunnelChart triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+        <ConversionFunnelChart triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} /> */}
         <ConsistencyGraph triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
       </main>
 
