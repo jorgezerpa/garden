@@ -98,10 +98,10 @@ export const getConversionFunnel = async (from: string, to: string, filters: { a
 };
 
 // GET /api/datavis/consistency-streak
-export const getConsistencyStreak = async (goalId: number, from: string, to: string, filters: { agents?:number[] }) => {
+export const getConsistencyStreak = async (goalId: number, from: string, to: string, filters: { agents?:number[], days?:boolean[] }) => {
   const response = await visClient.get('/consistency-streak', {
     ...getAuthHeader(),
-    params: { goalId, from, to, agents: filters.agents },
+    params: { goalId, from, to, agents: filters.agents, days: filters.days },
     paramsSerializer: {
       indexes: null
     }

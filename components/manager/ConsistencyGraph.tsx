@@ -7,6 +7,8 @@ import {
 } from 'recharts';
 import { getCompanyGoals } from '@/apiHandlers/admin';
 
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
 export function ConsistencyGraph({triggerPerAgentSearch, agentsSelected}:{triggerPerAgentSearch:boolean, agentsSelected:number[]}) {
   const getToday = () => new Date().toISOString().split('T')[0];
 
@@ -16,12 +18,12 @@ export function ConsistencyGraph({triggerPerAgentSearch, agentsSelected}:{trigge
   const [fromDate, setFromDate] = useState(getToday());
   const [toDate, setToDate] = useState(getToday());
   const [streaks, setStreaks] = useState({ current: 0, best: 0 });
-  
+  const [activeDays, setActiveDays] = useState([true, true, true, true, true, false, false]); // Mon-Fri active by default
 
   useEffect(() => {
     (async () => {
       try {
-        const result = await getConsistencyStreak(selectedGoal, fromDate, toDate, { agents: agentsSelected });
+        const result = await getConsistencyStreak(selectedGoal, fromDate, toDate, { agents: agentsSelected, days: activeDays });
         setData(result.history || result); 
         setStreaks({
           current: result.currentStreak || 0,
@@ -31,7 +33,7 @@ export function ConsistencyGraph({triggerPerAgentSearch, agentsSelected}:{trigge
         setData([]);
       }
     })();
-  }, [fromDate, toDate, selectedGoal, triggerPerAgentSearch]);
+  }, [fromDate, toDate, selectedGoal, activeDays, triggerPerAgentSearch]);
   
   useEffect(() => {
     (async () => {
@@ -43,6 +45,12 @@ export function ConsistencyGraph({triggerPerAgentSearch, agentsSelected}:{trigge
       }
     })();
   }, []);
+
+  const toggleDay = (index: number) => {
+    const nextDays = [...activeDays];
+    nextDays[index] = !nextDays[index];
+    setActiveDays(nextDays);
+  };
 
   return (
     <div className="bg-white dark:bg-[#1e2330] p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-sm mt-8">
@@ -87,6 +95,26 @@ export function ConsistencyGraph({triggerPerAgentSearch, agentsSelected}:{trigge
           </div>
         </div>
       </div>
+
+      {/* --- Active Days Selector Section --- */}
+        <div className="flex flex-col gap-3">
+          <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Consider Days:</span>
+          <div className="flex flex-wrap gap-2">
+            {DAYS.map((day, idx) => (
+              <button
+                key={day}
+                onClick={() => toggleDay(idx)}
+                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all border ${
+                  activeDays[idx] 
+                    ? 'bg-green-500 border-green-500 text-white shadow-[0_0_12px_rgba(34,197,94,0.3)]' 
+                    : 'bg-transparent border-slate-200 dark:border-white/10 text-slate-400 hover:border-slate-300'
+                }`}
+              >
+                {day}
+              </button>
+            ))}
+          </div>
+        </div>
 
       {/* --- Goal Schema Selector Section --- */}
       <div className="mb-10 space-y-6">
