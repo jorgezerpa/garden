@@ -9,14 +9,14 @@ import { getCompanyGoals } from '@/apiHandlers/admin';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-export function ConsistencyGraph({triggerPerAgentSearch, agentsSelected, lastCallDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], lastCallDate: string}) {
+export function ConsistencyGraph({triggerPerAgentSearch, agentsSelected, fromDate, toDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], fromDate: string, toDate: string}) {
   const getToday = () => new Date().toISOString().split('T')[0];
 
   const [data, setData] = useState<any[]>([]);
   const [goals, setGoals] = useState<{ name: string, id: number }[]>([])
   const [selectedGoal, setSelectedGoal] = useState<number>(1)
-  const [fromDate, setFromDate] = useState(lastCallDate);
-  const [toDate, setToDate] = useState(lastCallDate);
+  // const [fromDate, setFromDate] = useState(lastCallDate);
+  // const [toDate, setToDate] = useState(lastCallDate);
   const [streaks, setStreaks] = useState({ current: 0, best: 0 });
   const [activeDays, setActiveDays] = useState([true, true, true, true, true, false, false]); // Mon-Fri active by default
 
@@ -62,7 +62,7 @@ export function ConsistencyGraph({triggerPerAgentSearch, agentsSelected, lastCal
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-6">
-          <div className="flex items-center gap-3 bg-slate-50 dark:bg-black/20 p-2 rounded-2xl border border-slate-200 dark:border-white/10">
+          {/* <div className="flex items-center gap-3 bg-slate-50 dark:bg-black/20 p-2 rounded-2xl border border-slate-200 dark:border-white/10">
             <div className="flex flex-col px-2">
               <label className="text-[9px] font-black text-slate-400 uppercase">From</label>
               <input 
@@ -82,7 +82,7 @@ export function ConsistencyGraph({triggerPerAgentSearch, agentsSelected, lastCal
                 className="bg-transparent text-xs font-bold focus:outline-none dark:text-white cursor-pointer"
               />
             </div>
-          </div>
+          </div> */}
           <div className="flex gap-6">
             <div className="text-right">
               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block">Current Streak</span>

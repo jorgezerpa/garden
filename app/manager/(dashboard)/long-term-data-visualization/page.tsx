@@ -23,7 +23,8 @@ export default function AdminStats() {
   const [triggerPerAgentSearch, setTriggerPerAgentSearch] = useState(false)
   const [enableSearchButton, setEnableSearchButton] = useState(false)
 
-  const [lastCallDate, setLastCallDate] = useState<string|null>(null)
+  const [fromDate, setFromDate] = useState<string|null>(null)
+  const [toDate, setToDate] = useState<string|null>(null)
 
   useEffect(() => setMounted(true), []);
   
@@ -40,10 +41,12 @@ export default function AdminStats() {
     (async () => {
       try {
         const { lastCallDate:lcd } = await getLastCallDate()
-        setLastCallDate(new Date(lcd).toISOString().split('T')[0])
+        setFromDate(new Date(lcd).toISOString().split('T')[0])
+        setToDate(new Date(lcd).toISOString().split('T')[0])
       } catch (error) {
         console.log(error)
-        setLastCallDate(new Date().toISOString().split('T')[0])
+        setFromDate(new Date().toISOString().split('T')[0])
+        setToDate(new Date().toISOString().split('T')[0])
       }
     })();
   }, []);
@@ -65,7 +68,7 @@ export default function AdminStats() {
   }
 
   if (!mounted) return null;
-
+  if (!fromDate || !toDate) return null;
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-[#0f1219] p-4 md:p-8 transition-colors duration-500 font-sans text-slate-800 dark:text-slate-200">
@@ -97,7 +100,7 @@ export default function AdminStats() {
         </div>
 
         {/* --- 2. Dual Selectors Section --- */}
-        <div className="flex flex-wrap gap-4 items-center bg-white dark:bg-[#1e2330]/80 backdrop-blur-xl p-4 rounded-[2rem] border border-slate-200 dark:border-white/10 shadow-sm">
+        <div className="flex flex-wrap gap-4 justify-between items-center bg-white dark:bg-[#1e2330]/80 backdrop-blur-xl p-4 rounded-[2rem] border border-slate-200 dark:border-white/10 shadow-sm">
           {/* View Mode Toggle */}
           <div className="flex bg-slate-100 dark:bg-black/20 p-1 rounded-xl">
             {(['group', 'user'] as const).map((mode) => (
@@ -117,7 +120,6 @@ export default function AdminStats() {
             ))}
           </div>
 
-          {/* <div className="h-6 w-px bg-slate-200 dark:bg-white/10 hidden md:block" /> */}
 
           {/* Time Range Selector */}
           {/* <div className="flex gap-2">
@@ -133,6 +135,28 @@ export default function AdminStats() {
               </button>
             ))}
           </div> */}
+          <div className="flex items-center gap-3 bg-slate-50 dark:bg-black/20 p-2 rounded-2xl border border-slate-200 dark:border-white/10 ">
+            <div className="flex flex-col px-2">
+              <label className="text-[9px] font-black text-slate-400 uppercase">From</label>
+              <input 
+                type="date" 
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="bg-transparent text-xs font-bold focus:outline-none dark:text-white cursor-pointer"
+              />
+            </div>
+            <div className="h-8 w-[1px] bg-slate-200 dark:bg-white/10" />
+            <div className="flex flex-col px-2">
+              <label className="text-[9px] font-black text-slate-400 uppercase">To</label>
+              <input 
+                type="date" 
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="bg-transparent text-xs font-bold focus:outline-none dark:text-white cursor-pointer"
+              />
+            </div>
+          </div>
+
         </div>
       </header>
 
@@ -199,15 +223,15 @@ export default function AdminStats() {
       {/* --- 5. Data Dashboard --- */}
       <main className="space-y-6">
         {
-          lastCallDate && (
+          (fromDate && toDate) && (
             <>
-              <GeneralInsights lastCallDate={lastCallDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
-              <DailyActivityLineCharts lastCallDate={lastCallDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
-              <PerBlockBarChart lastCallDate={lastCallDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} /> 
-              <CallDurationHistogram lastCallDate={lastCallDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
-              <SeedHeatmap lastCallDate={lastCallDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
-              <ConversionFunnelChart lastCallDate={lastCallDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
-              <ConsistencyGraph lastCallDate={lastCallDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+              <GeneralInsights fromDate={fromDate} toDate={toDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+              <DailyActivityLineCharts fromDate={fromDate} toDate={toDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+              <PerBlockBarChart fromDate={fromDate} toDate={toDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} /> 
+              <CallDurationHistogram fromDate={fromDate} toDate={toDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+              <SeedHeatmap fromDate={fromDate} toDate={toDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+              <ConversionFunnelChart fromDate={fromDate} toDate={toDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+              <ConsistencyGraph fromDate={fromDate} toDate={toDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
             </>
           )
         }

@@ -8,13 +8,13 @@ import {
 
 const COLORS = ['#94a3b8', '#64748b', '#22c55e', '#16a34a', '#14532d'];
 
-export function CallDurationHistogram({triggerPerAgentSearch, agentsSelected, lastCallDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], lastCallDate: string}) {
+export function CallDurationHistogram({triggerPerAgentSearch, agentsSelected, fromDate, toDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], fromDate: string, toDate: string}) {
   // Helper to get today's date in YYYY-MM-DD
   const getToday = () => new Date().toISOString().split('T')[0];
 
   const [data, setData] = useState<{ range: string, count: number }[]>([])
-  const [fromDate, setFromDate] = useState(lastCallDate);
-  const [toDate, setToDate] = useState(lastCallDate);
+  // const [fromDate, setFromDate] = useState(lastCallDate);
+  // const [toDate, setToDate] = useState(lastCallDate);
 
   useEffect(() => {
     (async () => {
@@ -39,7 +39,7 @@ export function CallDurationHistogram({triggerPerAgentSearch, agentsSelected, la
 
         <div className="flex items-center gap-4">
           {/* Date Inputs Container */}
-          <div className="flex items-center gap-3 bg-slate-100 dark:bg-black/20 p-2 rounded-2xl border border-slate-200 dark:border-white/5">
+          {/* <div className="flex items-center gap-3 bg-slate-100 dark:bg-black/20 p-2 rounded-2xl border border-slate-200 dark:border-white/5">
             <div className="flex flex-col px-2">
               <label className="text-[9px] font-black text-slate-400 uppercase">From</label>
               <input 
@@ -59,7 +59,7 @@ export function CallDurationHistogram({triggerPerAgentSearch, agentsSelected, la
                 className="bg-transparent text-xs font-bold focus:outline-none dark:text-white cursor-pointer"
               />
             </div>
-          </div>
+          </div> */}
           
           <div className="hidden lg:flex bg-slate-100 dark:bg-black/20 p-1 rounded-xl h-fit">
              <span className="text-[9px] font-black px-3 py-1 text-green-500 uppercase tracking-widest">Histogram Mode</span>

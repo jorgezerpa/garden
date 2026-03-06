@@ -10,15 +10,15 @@ import { getSchemasList } from '@/apiHandlers/schema';
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const BLOCK_TYPES = ['WORKING', 'REST', 'EXTRA_TIME'];
 
-export function PerBlockBarChart({triggerPerAgentSearch, agentsSelected, lastCallDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], lastCallDate: string}) {
+export function PerBlockBarChart({triggerPerAgentSearch, agentsSelected, fromDate, toDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], fromDate: string, toDate: string}) {
   const getToday = () => new Date().toISOString().split('T')[0];
 
   // States
   const [data, setData] = useState<any[]>([]);
   const [schemas, setSchemas] = useState<{name:string, id:number}[]>([]);
   const [selectedSchemaId, setSelectedSchemaId] = useState<number>(1); // default first schema
-  const [fromDate, setFromDate] = useState(lastCallDate);
-  const [toDate, setToDate] = useState(lastCallDate);
+  // const [fromDate, setFromDate] = useState(lastCallDate);
+  // const [toDate, setToDate] = useState(lastCallDate);
   const [activeDays, setActiveDays] = useState([true, true, true, true, true, false, false]); // Mon-Fri active by default
   const [activeTypes, setActiveTypes] = useState([true, true, true]); // Mon-Fri active by default
 
@@ -80,7 +80,7 @@ export function PerBlockBarChart({triggerPerAgentSearch, agentsSelected, lastCal
 
         <div className="flex flex-col sm:flex-row items-center gap-4">
           {/* Date Range Inputs */}
-          <div className="flex items-center gap-3 bg-slate-50 dark:bg-black/20 p-2 rounded-2xl border border-slate-200 dark:border-white/10">
+          {/* <div className="flex items-center gap-3 bg-slate-50 dark:bg-black/20 p-2 rounded-2xl border border-slate-200 dark:border-white/10">
             <div className="flex flex-col px-2">
               <label className="text-[9px] font-black text-slate-400 uppercase">From</label>
               <input 
@@ -100,7 +100,7 @@ export function PerBlockBarChart({triggerPerAgentSearch, agentsSelected, lastCal
                 className="bg-transparent text-xs font-bold focus:outline-none dark:text-white cursor-pointer"
               />
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 

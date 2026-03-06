@@ -12,8 +12,8 @@ interface HourlyData {
   label: string;
 }
 
-export function SeedHeatmap({triggerPerAgentSearch, agentsSelected, lastCallDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], lastCallDate: string}) {
-  const [selectedYear, setSelectedYear] = useState<number>(new Date(lastCallDate).getFullYear());
+export function SeedHeatmap({triggerPerAgentSearch, agentsSelected, fromDate, toDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], fromDate: string, toDate: string}) {
+
   const [selectedDay, setSelectedDay] = useState<any>(null);
   const [data, setData] = useState<{ date: Date, intensity: number, seeds: number }[]>([]);
   const [hourlyData, setHourlyData] = useState<HourlyData[]>([]);
@@ -29,6 +29,8 @@ export function SeedHeatmap({triggerPerAgentSearch, agentsSelected, lastCallDate
   useEffect(() => {
     (async () => {
       try {
+        // @dev@todo this is not handling the case where from-to are diff years 
+        const selectedYear = new Date(fromDate).getFullYear()
         const result = await getSeedTimelineHeatmap(selectedYear, { agents: agentsSelected });
         const formattedResult = result.map((d: any) => {
           const [year, month, day] = d.date.split('-').map(Number);
@@ -53,7 +55,7 @@ export function SeedHeatmap({triggerPerAgentSearch, agentsSelected, lastCallDate
         setData([]);
       }
     })();
-  }, [selectedYear, triggerPerAgentSearch]);
+  }, [fromDate, triggerPerAgentSearch]);
 
   const getIntensityClass = (level: number) => {
     switch (level) {
@@ -75,7 +77,15 @@ export function SeedHeatmap({triggerPerAgentSearch, agentsSelected, lastCallDate
           <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Behavioral Consistency Tracker</p>
         </div>
 
-        <div className="flex items-center gap-3 bg-slate-50 dark:bg-black/20 p-2 px-4 rounded-2xl border border-slate-200 dark:border-white/10">
+        <div className="flex flex-col bg-slate-50 dark:bg-black/20 p-2 px-6 rounded-2xl border border-slate-200 dark:border-white/10">
+          <label className="text-[9px] font-black text-slate-400 uppercase tracking-tight">
+            Selected Year
+          </label>
+          <span className="text-xs font-bold dark:text-white">
+            { new Date(fromDate).getFullYear() }
+          </span>
+        </div>
+        {/* <div className="flex items-center gap-3 bg-slate-50 dark:bg-black/20 p-2 px-4 rounded-2xl border border-slate-200 dark:border-white/10">
           <div className="flex flex-col">
             <label className="text-[9px] font-black text-slate-400 uppercase">Selected Year</label>
             <select 
@@ -89,7 +99,7 @@ export function SeedHeatmap({triggerPerAgentSearch, agentsSelected, lastCallDate
             </select>
           </div>
           <div className="text-slate-400 text-[10px]">▼</div>
-        </div>
+        </div> */}
       </div>
 
       {/* --- The Heatmap Grid --- */}

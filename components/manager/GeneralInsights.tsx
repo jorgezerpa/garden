@@ -9,7 +9,7 @@ import { getCompanyGoals } from '@/apiHandlers/admin';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-export function GeneralInsights({triggerPerAgentSearch, agentsSelected, lastCallDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], lastCallDate: string}) {
+export function GeneralInsights({triggerPerAgentSearch, agentsSelected, fromDate, toDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], fromDate: string, toDate: string}) {
     const [generalInsights, setGeneralInsights] = useState<{
       totalTalkTime: number,
       totalCalls: number,
@@ -27,8 +27,8 @@ export function GeneralInsights({triggerPerAgentSearch, agentsSelected, lastCall
       conversionRate: 0,
       avgCallDuration: 0
     })
-    const [fromDate, setFromDate] = useState(lastCallDate);
-    const [toDate, setToDate] = useState(lastCallDate);
+    // const [fromDate, setFromDate] = useState(lastCallDate);
+    // const [toDate, setToDate] = useState(lastCallDate);
 
     useEffect(() => {
       (async () => {

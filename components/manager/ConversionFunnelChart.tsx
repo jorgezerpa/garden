@@ -5,18 +5,26 @@ import {
   FunnelChart, Funnel, Tooltip, ResponsiveContainer, LabelList, Cell 
 } from 'recharts';
 
-export function ConversionFunnelChart({triggerPerAgentSearch, agentsSelected, lastCallDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], lastCallDate: string}) {
+export function ConversionFunnelChart({triggerPerAgentSearch, agentsSelected, fromDate, toDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], fromDate: string, toDate: string}) {
   const getToday = () => new Date().toISOString().split('T')[0];
 
   const [data, setData] = useState<{ value: number, name: string, fill: string, sub: string }[]>([]);
-  const [fromDate, setFromDate] = useState(lastCallDate);
-  const [toDate, setToDate] = useState(lastCallDate);
+  // const [fromDate, setFromDate] = useState(lastCallDate);
+  // const [toDate, setToDate] = useState(lastCallDate);
 
   useEffect(() => {
     (async () => {
       try {
         const result = await getConversionFunnel(fromDate, toDate, { agents: agentsSelected });
-        setData(result);
+        
+        const GREEN_GRADIENT = ['#10b981', '#059669', '#047857', '#065f46'];
+        const LIGHT_GREENS = ['#34d399', '#10b981', '#059669', '#047857'];
+        
+        const formattedData = result.map((item:any, index:number) => ({
+          ...item,
+          fill: item.fill || GREEN_GRADIENT[index % 4] 
+        }));
+        setData(formattedData);
       } catch (error) {
         setData([]);
       }
@@ -46,7 +54,7 @@ export function ConversionFunnelChart({triggerPerAgentSearch, agentsSelected, la
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-4">
-          <div className="flex items-center gap-3 bg-slate-50 dark:bg-black/20 p-2 rounded-2xl border border-slate-200 dark:border-white/10">
+          {/* <div className="flex items-center gap-3 bg-slate-50 dark:bg-black/20 p-2 rounded-2xl border border-slate-200 dark:border-white/10">
             <div className="flex flex-col px-2">
               <label className="text-[9px] font-black text-slate-400 uppercase">From</label>
               <input 
@@ -66,7 +74,7 @@ export function ConversionFunnelChart({triggerPerAgentSearch, agentsSelected, la
                 className="bg-transparent text-xs font-bold focus:outline-none dark:text-white cursor-pointer"
               />
             </div>
-          </div>
+          </div> */}
 
           <div className="text-right hidden sm:block">
              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block">Overall Efficiency</span>
