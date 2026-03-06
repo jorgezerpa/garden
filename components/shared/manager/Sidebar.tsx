@@ -9,7 +9,8 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { id: 'agents-management', label: 'Agents Management', desc: 'Profile & Access Control' },
+  { id: 'managers-management', label: 'Managers Management', desc: 'Profile & Access Control of managers' },
+  { id: 'agents-management', label: 'Agents Management', desc: 'Profile & Access Control of agents' },
   { id: 'agents-comparisson', label: 'Agents Comparison', desc: 'Rankings & Performance' },
   { id: 'team-heatmap', label: 'Team Heatmap', desc: 'Productivity Windows' },
   // { id: 'export-and-reporting', label: 'Export and Reporting', desc: 'CSV & PDF Engine' },

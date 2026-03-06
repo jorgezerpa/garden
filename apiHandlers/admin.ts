@@ -24,6 +24,7 @@ export interface CreateManagerData {
 export interface UpdateManagerData {
   name?: string;
   email?: string;
+  password?: string
 }
 
 export interface CreateAgentData {
@@ -41,29 +42,30 @@ export interface UpdateAgentData {
 }
 
 export const addManager = async (data: CreateManagerData) => {
-  const response = await adminClient.post('/addManager', data);
+  const response = await adminClient.post('/addManager', data,getAuthHeader());
   return response.data;
 };
 
 export const editManager = async (id: number, data: UpdateManagerData) => {
-  const response = await adminClient.put(`/editManager/${id}`, data);
+  const response = await adminClient.put(`/editManager/${id}`, data, getAuthHeader());
   return response.data;
 };
 
 export const getManager = async (id: number) => {
-  const response = await adminClient.get(`/getManager/${id}`);
+  const response = await adminClient.get(`/getManager/${id}`, getAuthHeader());
   return response.data;
 };
 
 export const getManagersList = async (page: number = 1, limit: number = 10) => {
   const response = await adminClient.get('/getManagersList', {
+    ...getAuthHeader(),
     params: { page, limit },
   });
   return response.data;
 };
 
 export const removeManager = async (id: number) => {
-  const response = await adminClient.delete(`/removeManagers/${id}`);
+  const response = await adminClient.delete(`/removeManagers/${id}`, getAuthHeader());
   return response.data;
 };
 
