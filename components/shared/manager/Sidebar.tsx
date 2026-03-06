@@ -1,14 +1,29 @@
 'use client'
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { logoutUser } from '@/apiHandlers/auth';
+import { jwtDecode } from "jwt-decode";
+
+function getJWTPayload() {
+  const token = localStorage.getItem('jwt');
+  if (!token) return null;
+
+  try {
+    const decoded = jwtDecode(token);
+    console.log(decoded)
+    return decoded as { role: "MAIN_ADMIN"|"MANAGER"}|null
+  } catch (error) {
+    console.error("Invalid token", error);
+    return null;
+  }
+}
 
 interface SidebarProps {
   activeItem?: string;
   onNavigate?: (id: string) => void;
 }
 
-const navItems = [
+const navItemsMainAdmin = [
   { id: 'managers-management', label: 'Managers Management', desc: 'Profile & Access Control of managers' },
   { id: 'agents-management', label: 'Agents Management', desc: 'Profile & Access Control of agents' },
   { id: 'agents-comparisson', label: 'Agents Comparison', desc: 'Rankings & Performance' },
@@ -19,9 +34,18 @@ const navItems = [
   { id: 'api-keys', label: 'API Keys', desc: 'Generate key-pair for authentications' },
 ];
 
+const navItemsManager = [
+  { id: 'agents-management', label: 'Agents Management', desc: 'Profile & Access Control of agents' },
+  { id: 'agents-comparisson', label: 'Agents Comparison', desc: 'Rankings & Performance' },
+  { id: 'team-heatmap', label: 'Team Heatmap', desc: 'Productivity Windows' },
+  // { id: 'export-and-reporting', label: 'Export and Reporting', desc: 'CSV & PDF Engine' },
+  { id: 'long-term-data-visualization', label: 'Long Term Data Visualization', desc: 'Behavioral Analytics' },
+];
+
 export function Sidebar({ activeItem = 'data-visualization', onNavigate }: SidebarProps) {
   const { theme, setTheme } = useTheme();
   const [hovered, setHovered] = useState<string | null>(null);
+  const [role, setRole] = useState<"MAIN_ADMIN"|"MANAGER"|null>(null)
 
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
 
@@ -64,6 +88,16 @@ export function Sidebar({ activeItem = 'data-visualization', onNavigate }: Sideb
     }
   };
 
+  useEffect(()=>{
+    const token = getJWTPayload()
+    if(token) setRole(token.role)
+    else {
+      // logout and redirect to login 
+    }
+  }, [])
+
+  if(!role) return null
+
   return (
     <aside className="w-full h-full flex flex-col bg-white dark:bg-[#1e2330] border-r border-slate-200 dark:border-white/10 transition-colors duration-500">
       
@@ -86,7 +120,7 @@ export function Sidebar({ activeItem = 'data-visualization', onNavigate }: Sideb
 
       {/* 2. Navigation List */}
       <nav className="flex-1 px-4 py-4 space-y-1.5">
-        {navItems.map((item) => {
+        {(role=="MAIN_ADMIN"?navItemsMainAdmin:navItemsManager).map((item) => {
           const isActive = activeItem === item.id;
           return (
             <button

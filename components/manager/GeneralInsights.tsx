@@ -46,7 +46,7 @@ export function GeneralInsights({triggerPerAgentSearch, agentsSelected, fromDate
         } catch (error) {
         }
       })();
-    }, [triggerPerAgentSearch]);
+    }, [triggerPerAgentSearch, fromDate, toDate]);
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
