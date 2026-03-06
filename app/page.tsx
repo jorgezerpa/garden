@@ -1,17 +1,31 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, ChangeEvent } from 'react'
 import { useTheme } from 'next-themes'
+import { loginUser } from '@/apiHandlers/auth'
+import { useRouter } from 'next/navigation'
 
 export default function SignIn() {
+  const router = useRouter()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
-  const [isLogin, setIsLogin] = useState(true)
   const [formData, setFormData] = useState({ email: '', password: '', name: '' })
 
   useEffect(() => setMounted(true), [])
   if (!mounted) return null
 
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
+
+
+  const handleSubmit = async () => {
+      try {
+        await loginUser({ email:formData.email, password: formData.password })
+        router.push('/agent-dashboard')
+      } catch (error: any) {
+        console.log(error)
+      }
+  }
+
+
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-[#1a1f2b] flex items-center justify-center p-6 transition-colors duration-500 font-sans selection:bg-green-500/30 relative overflow-hidden">
@@ -42,64 +56,44 @@ export default function SignIn() {
           
           <div className="mb-8">
             <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
-              {isLogin ? 'Welcome Back' : 'Create Garden'}
+              Welcome Back
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 font-medium">
-              {isLogin ? 'Enter your seeds to continue growing.' : 'Start your sales journey with us today.'}
+              Enter your seeds to continue growing.
             </p>
           </div>
 
           <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-            {!isLogin && (
-              <div className="space-y-1.5">
-                <label className="text-[10px] uppercase tracking-widest font-black text-slate-400 ml-1">Full Name</label>
-                <input 
-                  type="text" 
-                  placeholder="Sarah Green"
-                  className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-2xl px-5 py-3.5 text-sm outline-none focus:border-green-500/50 transition-all placeholder:opacity-30"
-                />
-              </div>
-            )}
-
+          
             <div className="space-y-1.5">
               <label className="text-[10px] uppercase tracking-widest font-black text-slate-400 ml-1">Email Address</label>
               <input 
+                onChange={(e)=>setFormData(curr=> ({ ...curr, email: e.target.value }))}
+                value={formData.email}
                 type="email" 
                 placeholder="sarah@garden.com"
-                className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-2xl px-5 py-3.5 text-sm outline-none focus:border-green-500/50 transition-all placeholder:opacity-30"
-              />
+                className="dark:text-gray-200 w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-2xl px-5 py-3.5 text-sm outline-none focus:border-green-500/50 transition-all placeholder:opacity-30"
+                />
             </div>
 
             <div className="space-y-1.5 pb-2">
               <div className="flex justify-between">
                 <label className="text-[10px] uppercase tracking-widest font-black text-slate-400 ml-1">Password</label>
-                {isLogin && <span className="text-[10px] font-bold text-green-500 cursor-pointer hover:underline">Forgot?</span>}
               </div>
               <input 
+                onChange={(e)=>setFormData(curr=> ({ ...curr, password: e.target.value }))}
+                value={formData.password}
                 type="password" 
                 placeholder="••••••••"
-                className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-2xl px-5 py-3.5 text-sm outline-none focus:border-green-500/50 transition-all placeholder:opacity-30"
+                className="dark:text-gray-200 w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-2xl px-5 py-3.5 text-sm outline-none focus:border-green-500/50 transition-all placeholder:opacity-30"
               />
             </div>
 
-            <button className="w-full py-4 rounded-2xl bg-green-500 hover:bg-green-400 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-green-500/30 transition-all active:scale-[0.98] mt-4">
-              {isLogin ? 'Sign In' : 'Begin Harvest'}
+            <button type='button' onClick={handleSubmit} className="w-full py-4 rounded-2xl bg-green-500 hover:bg-green-400 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-green-500/30 transition-all active:scale-[0.98] mt-4">
+              login
             </button>
           </form>
-
-          {/* --- Switch Mode --- */}
-          <div className="mt-8 pt-6 border-t border-slate-100 dark:border-white/5 text-center">
-            <button 
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-green-500 transition-colors"
-            >
-              {isLogin ? (
-                <>Don't have an account? <span className="text-green-500 font-bold">Sign Up</span></>
-              ) : (
-                <>Already have a garden? <span className="text-green-500 font-bold">Log In</span></>
-              )}
-            </button>
-          </div>
+          
         </div>
 
         {/* Footer info */}

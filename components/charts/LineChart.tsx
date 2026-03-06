@@ -14,18 +14,18 @@ import {
 } from 'recharts'
 import { useTheme } from 'next-themes'
 
-// Mock Data
-const data = [
-  { day: 'Mon', growth: 40 },
-  { day: 'Tue', growth: 35 },
-  { day: 'Wed', growth: 55 },
-  { day: 'Thu', growth: 45 },
-  { day: 'Fri', growth: 70 },
-  { day: 'Sat', growth: 65 },
-  { day: 'Sun', growth: 85 },
-]
+// // Mock Data
+// const data = [
+//   { day: 'Mon', growth: 40 },
+//   { day: 'Tue', growth: 35 },
+//   { day: 'Wed', growth: 55 },
+//   { day: 'Thu', growth: 45 },
+//   { day: 'Fri', growth: 70 },
+//   { day: 'Sat', growth: 65 },
+//   { day: 'Sun', growth: 85 },
+// ]
 
-export function LineChart() {
+export function LineChart({data}:{data:{day:string, growth: number}[]}) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
 

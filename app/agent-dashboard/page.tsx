@@ -4,6 +4,7 @@ import { TalkTime } from '@/components/TalkTime'
 import { useTheme } from 'next-themes'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
+import { getAgentDayInsights, getAgentWeeklyGrowth } from '@/apiHandlers/agentDashboard'
 
 export default function Home() {
   const { theme, setTheme } = useTheme()
@@ -11,9 +12,61 @@ export default function Home() {
 
   // MINDSET COMPONENT
   const [mindset, setMindset] = useState({ energy: 80, focus: 45, motivation: 70 });
+  const [agentInsights, setAgentInsights] = useState<{
+    seeds: number,
+    leads: number,
+    sales: number,
+    currentStreak: number,
+    number_of_calls: number,
+    number_of_deep_call: number,
+    energy: number,
+    focus: number,
+    motivation: number,
+    talkTime: number,
+    goalSeeds: number,
+    goalLeads: number, 
+    goalSales: number,
+    goalNumberOfCalls: number,
+    goalNumberOfLongCalls: number,
+    goalTalkTimeMinutes: number,
+  }>({
+    seeds: 0,
+    leads: 0,
+    sales: 0,
+    currentStreak: 0,
+    number_of_calls: 0,
+    number_of_deep_call: 0,
+    energy: 0,
+    focus: 0,
+    motivation: 0,
+    talkTime: 0,
+    goalSeeds: 0,
+    goalLeads: 0, 
+    goalSales: 0,
+    goalNumberOfCalls: 0,
+    goalNumberOfLongCalls: 0,
+    goalTalkTimeMinutes: 0,
+  })
+
+  const [weeklyGrowthData, setWeeklyGrowthData] = useState<{day:string, growth: number}[]>([])
+
+  type AgentInsights = typeof agentInsights;
 
   useEffect(() => setMounted(true), [])
-  if (!mounted) return null
+  
+  useEffect(()=>{
+    (async()=>{
+      try {
+        const response = await getAgentDayInsights("2024-05-20")
+        const weeklyGrowthDataResponse = await getAgentWeeklyGrowth("2024-05-20")
+        setAgentInsights(response)
+        setWeeklyGrowthData(weeklyGrowthDataResponse)
+        setMindset({ energy: response.energy, focus: response.focus, motivation: response.motivation })
+      } catch (error) {
+        console.log("error agent dashboard")
+      }
+    })()
+  }, [])
 
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
 
@@ -25,6 +78,15 @@ export default function Home() {
     shadow-sm dark:shadow-[0_0_15px_rgba(0,0,0,0.4)] 
     rounded-2xl p-4 transition-all duration-500
   `;
+
+  const date = new Date(); // or pass your specific date object
+  const formattedDate = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
+
+  if (!mounted) return null
 
   return (
     <div className="min-h-screen transition-colors duration-500 bg-slate-100 dark:bg-[#1a1f2b] text-slate-800 dark:text-slate-200 p-4 md:p-6 flex flex-col gap-4 font-sans selection:bg-green-500/30">
@@ -60,7 +122,7 @@ export default function Home() {
               Welcome, <span className="font-bold text-green-500 dark:text-green-400">Sarah</span>
             </span>
             <span className="text-[10px] uppercase tracking-widest opacity-40 font-semibold">
-              Wednesday, April 24
+              { formattedDate }
             </span>
           </div>
           
@@ -132,27 +194,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* --- Reset Zone Section --- */}
-          <div className={`${cardStyle} h-auto flex flex-col gap-3`}>
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-2">
-              Reset Zone
-            </h3>
-            
-            <div className="flex flex-col gap-2">
-              <ResetButton 
-                label="Back to Line" 
-                onClick={() => console.log("Back to Line clicked")} 
-              />
-              <ResetButton 
-                label="Bad Call Reset" 
-                onClick={() => console.log("Bad Call Reset clicked")} 
-              />
-              <ResetButton 
-                label="Let It Go" 
-                onClick={() => console.log("Let It Go clicked")} 
-              />
-            </div>
-          </div>
+        
           {/* /* --- Reset Zone Section --- */} 
           <div className="bg-white dark:bg-[#252b39]/80 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-[0_0_15px_rgba(0,0,0,0.4)] rounded-2xl p-4 flex-1 min-h-[180px] flex flex-col relative overflow-hidden transition-all duration-500">
             
@@ -178,7 +220,7 @@ export default function Home() {
               {/* <span className="text-[10px] uppercase tracking-widest text-slate-300 dark:text-slate-600 font-bold">
                 Graph Component Area
               </span> */}
-              <LineChart />
+              <LineChart data={weeklyGrowthData} />
             </div>
 
             {/* 4. X-Axis Labels Placeholder */}
@@ -195,59 +237,46 @@ export default function Home() {
         {/* Middle Column */}
         <section className="flex flex-col gap-4 w-full lg:w-1/2">
           {/* --- Talk Time --- */}
-          <TalkTime />
+          {/* @TODO replace with current day goal  */}
+          <TalkTime time={agentInsights.talkTime} goal={0} total_calls={agentInsights.number_of_calls} total_deep_calls={agentInsights.number_of_deep_call} /> 
 
           {/* --- streak tracker Section --- */}
-          <div className="bg-white dark:bg-[#252b39]/80 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-[0_0_15px_rgba(0,0,0,0.4)] rounded-2xl p-4 flex-1 min-h-[140px] relative  group transition-all duration-500">
-            
-            {/* 1. Atmospheric Glows (The "Meadow" Effect) */}
-            <div className='absolute inset-0 overflow-hidden'>
-              <div className="absolute inset-0 bg-gradient-to-t from-green-500/10 via-transparent to-transparent opacity-60 pointer-events-none" />
-              <div className="absolute -bottom-10 -left-10 w-48 h-24 bg-green-500/20 blur-[50px] rounded-full pointer-events-none group-hover:bg-green-500/30 transition-colors duration-700" />
-            </div>
+          <div className="bg-white dark:bg-[#252b39]/80 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-[0_0_15px_rgba(0,0,0,0.4)] rounded-2xl p-4 flex-1 relative  group transition-all duration-500">
+
             
             {/* 2. Header Label with decorative lines */}
-            <div className="relative z-10 flex items-center justify-center gap-3 mb-6">
-              <div className="h-[1px] w-6 bg-slate-200 dark:bg-white/5" />
-              <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-                Streak Tracker
+            <div className="relative z-10 flex flex-col items-center justify-center gap-3 mb-6">
+
+              <h3 className="text-[15px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-gray-100">
+                Current Streak
               </h3>
-              <div className="h-[1px] w-6 bg-slate-200 dark:bg-white/5" />
-            </div>
-
-            {/* 3. Stats Display */}
-            <div className="relative z-10 flex flex-col md:flex-row items-center justify-around gap-4 px-4">
-              
-              {/* Current Streak Container */}
-              <div className="text-center">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500 block mb-1">
-                  Current Streak
-                </span>
-                <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-2xl font-bold tracking-tight text-slate-700 dark:text-white">42</span>
-                  <span className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500">min</span>
-                </div>
-              </div>
-
-              {/* Vertical Divider (Visible only on desktop) */}
-              <div className="hidden md:block h-8 w-[1px] bg-slate-200 dark:bg-white/10" />
-
-              {/* Best Streak Container */}
-              <div className="text-center">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500 block mb-1">
-                  Best Streak
-                </span>
-                <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-2xl font-bold tracking-tight text-slate-700 dark:text-white">1h 15m</span>
-                </div>
+              <div className="flex items-baseline justify-center gap-1">
+                <span className="text-2xl font-bold tracking-tight text-slate-700 dark:text-white">{ agentInsights.currentStreak }%</span>
               </div>
             </div>
 
-            {/* 4. Tiny Decorative Glows (Sparkles) */}
-            <div className="absolute bottom-4 right-12 w-1 h-1 bg-white rounded-full blur-[1px] animate-pulse opacity-30" />
-            <div className="absolute bottom-6 right-20 w-1.5 h-1.5 bg-green-300 rounded-full blur-[2px] animate-pulse opacity-20" />
+            <div className="relative z-10 grid grid-cols-3 gap-4 px-4">
+              {
+                [
+                  { label: "Seeds", currentValueKey: "seeds" as keyof AgentInsights, goalKey: "goalSeeds" as keyof AgentInsights },
+                  { label: "Leads", currentValueKey: "leads" as keyof AgentInsights, goalKey: "goalLeads" as keyof AgentInsights },
+                  { label: "Sales", currentValueKey: "sales" as keyof AgentInsights, goalKey: "goalSales" as keyof AgentInsights },
+                  { label: "Calls", currentValueKey: "number_of_calls" as keyof AgentInsights, goalKey: "goalNumberOfCalls" as keyof AgentInsights },
+                  { label: "Long Calls", currentValueKey: "number_of_deep_call" as keyof AgentInsights, goalKey: "goalNumberOfLongCalls" as keyof AgentInsights },
+                  { label: "Talk Time (min)", currentValueKey: "talkTime" as keyof AgentInsights, goalKey: "goalTalkTimeMinutes" as keyof AgentInsights }
+                ].map(item => (
+                  <div className="text-center">
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-200 block mb-1">
+                      { item.label }
+                    </span>
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-lg font-bold tracking-tight text-slate-700 dark:text-white">{agentInsights[item.currentValueKey]}/{ agentInsights[item.goalKey] }</span>
+                    </div>
+                  </div>
+                ))
+              }              
 
-            <ManualSeeding />
+            </div>
           </div>
         </section>
 
@@ -260,10 +289,10 @@ export default function Home() {
             </h3>
             
             <div className="flex flex-col h-full justify-between pb-4">
-              <StatRow id="seeds" label="Seeds" value={14} />
-              <StatRow id="callback" label="Callback" value={6} />
-              <StatRow id="lead" label="Lead" value={3} />
-              <StatRow id="sale" label="Sale" value={1} />
+              <StatRow id="seeds" label="Seeds" value={agentInsights.seeds} />
+              {/* <StatRow id="callback" label="Callback" value={agentInsights.} /> */}
+              <StatRow id="lead" label="Lead" value={agentInsights.leads} />
+              <StatRow id="sale" label="Sale" value={agentInsights.sales} />
             </div>
           </div>
           {/* --- Call Blocks Section --- */}
@@ -560,103 +589,4 @@ const CallBlock = ({ time, status }: CallBlockProps) => {
     </div>
   );
 };
-
-// -------------------------------
-// MANUAL SEEDING
-// -------------------------------
-const ManualSeeding = () => {
-  return (
-    <>
-          {/* --- High-Visibility Manual Seeding Bar --- */}
-      <div className="max-w-2xl mx-auto relative top-[20%] mt-5 md:mt-0">
-        <div className={`
-          /* Background & Glass - Darker and less transparent for visibility */
-          bg-white/95 dark:bg-[#1e2330] 
-          backdrop-blur-2xl
-          
-          /* The "Pop" - Thick saturated border and a neon perimeter glow */
-          border-2 border-green-500/30 dark:border-green-400/20
-          shadow-[0_0_30px_rgba(34,197,94,0.15)] dark:shadow-[0_0_50px_rgba(0,0,0,0.6)]
-          
-          rounded-3xl p-4 flex items-center justify-between gap-4
-        `}>
-          
-          {/* Status Indicator (Left) */}
-          <div className="hidden sm:flex items-center gap-3 pr-4 border-r border-slate-200 dark:border-white/10">
-            <div className="relative">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-ping absolute inset-0 opacity-20" />
-              <div className="w-3 h-3 bg-green-500 rounded-full shadow-[0_0_8px_#22c55e]" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-green-600 dark:text-green-400 leading-none">
-                Live Seeding
-              </span>
-              <span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-bold mt-1">
-                Garden Active
-              </span>
-            </div>
-          </div>
-
-          {/* Buttons Container */}
-          <div className="flex-1 flex flex-col md:flex-row items-center gap-2 sm:gap-3">
-            
-            {/* Standard Seed */}
-            <button className="w-full md:w-auto flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-green-500/50 transition-all active:scale-90 group">
-              <div className="relative w-7 h-7 rounded-md transition-colors overflow-hidden">
-                <Image
-                  src={"/icons-agent-dashboard/Seeds.svg"}
-                  alt={`Seeds icon`}
-                  fill
-                  className="object-contain p-0.5" // object-contain is usually better for icons
-                />
-              </div>
-              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Seed</span>
-            </button>
-
-            {/* Callback */}
-            <button className="w-full md:w-auto flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-blue-500/50 transition-all active:scale-90 group">
-              <div className="relative w-7 h-7 rounded-md transition-colors overflow-hidden">
-                <Image
-                  src={"/icons-agent-dashboard/Callbacks.svg"}
-                  alt={`Seeds icon`}
-                  fill
-                  className="object-contain p-0.5" // object-contain is usually better for icons
-                />
-              </div>
-              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Callback</span>
-            </button>
-
-            {/* Connection */}
-            <button className="w-full md:w-auto flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-purple-500/50 transition-all active:scale-90 group">
-              <div className="relative w-7 h-7 rounded-md transition-colors overflow-hidden">
-                <Image
-                  src={"/icons-agent-dashboard/Connect.svg"}
-                  alt={`Seeds icon`}
-                  fill
-                  className="object-contain p-0.5" // object-contain is usually better for icons
-                />
-              </div>
-              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Connect</span>
-            </button>
-
-            {/* Harvest (The main action) */}
-            <button className="w-full md:w-auto flex-[1.2] flex flex-col items-center justify-center gap-1 py-2 rounded-2xl bg-green-500 text-white shadow-lg shadow-green-500/40 hover:bg-green-400 transition-all active:scale-95">
-              <div className="relative w-7 h-7 rounded-md transition-colors overflow-hidden">
-                <Image
-                  src={"/icons-agent-dashboard/Harvest.svg"}
-                  alt={`Seeds icon`}
-                  fill
-                  className="object-contain p-0.5" // object-contain is usually better for icons
-                />
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-widest">Harvest</span>
-            </button>
-
-          </div>
-        </div>
-      </div>
-    </>
-  )
-}
-
 

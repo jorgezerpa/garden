@@ -1,17 +1,23 @@
 'use client'
 import { useState, useEffect } from 'react';
 
-export function TalkTime() {
-  const [progress, setProgress] = useState(20);
+export function TalkTime({time, goal, total_calls, total_deep_calls}:{time:number, goal:number, total_calls: number, total_deep_calls: number}) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
+  const progress = goal>0 ? (time/goal) * 100 : 100
   const radius = 120; // Slightly smaller to allow for glow overflow
   const circumference = 2 * Math.PI * radius;
   
   // Progress calculations
-  const offset = circumference - (progress / 100) * circumference;
+  const offset = progress<=100 ? circumference - (progress / 100) * circumference : circumference - (100 / 100) * circumference;
+
+  // current time in hours mins 
+  const currentTimeHoursAndMina = {
+    hours: Math.floor(time / 60).toString().padStart(2, '0'),
+    min: (time % 60).toString().padStart(2, '0')
+  };
 
   if (!mounted) return null;
 
@@ -102,7 +108,7 @@ export function TalkTime() {
               Active Session
             </span>
             <h2 className="text-5xl font-light tracking-tighter tabular-nums text-slate-800 dark:text-white">
-              02:15<span className="opacity-30 text-3xl">:30</span>
+              { currentTimeHoursAndMina.hours + ":" + currentTimeHoursAndMina.min }
             </h2>
             <div className="flex items-center justify-center gap-2 mt-2">
                 <div className="w-1 h-1 rounded-full bg-green-500" />
@@ -117,8 +123,8 @@ export function TalkTime() {
         <div className="flex flex-col gap-1">
           <span className="text-[9px] font-bold uppercase tracking-widest opacity-40">Call Volume</span>
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-bold">26</span>
-            <span className="text-[10px] text-green-500 font-bold">+12% above yesterday</span>
+            <span className="text-2xl font-bold">{ total_deep_calls }</span>
+            {/* <span className="text-[10px] text-green-500 font-bold">+12% above yesterday</span> */}
           </div>
         </div>
 
@@ -130,7 +136,7 @@ export function TalkTime() {
         <div className="flex flex-col items-end gap-1">
           <span className="text-[9px] font-bold uppercase tracking-widest opacity-40">Deep Calls</span>
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold">8</span>
+            <span className="text-2xl font-bold">{ total_calls }</span>
             <div className="w-4 h-4 rounded-full bg-orange-500/20 border border-orange-500/50 flex items-center justify-center">
                 <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
             </div>
