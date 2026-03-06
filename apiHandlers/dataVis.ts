@@ -32,6 +32,24 @@ export const getLastCallDate = async () => {
   return response.data;
 };
 
+
+type SortConfig = {
+  key: string | null;
+  direction: 'asc' | 'desc';
+};
+
+// GET /api/datavis/get-agents-comparisson
+export const getAgentsComparison = async (from: string, to: string, filters: { agents?:number[], sortConfig:SortConfig }) => {
+  const response = await visClient.get('/get-agents-comparisson', {
+    ...getAuthHeader(),
+    params: { from, to, sortKey: filters.sortConfig.key, direction: filters.sortConfig.direction, page:1, pageSize: 1000, agents: filters.agents },
+    paramsSerializer: {
+      indexes: null
+    }
+  });
+  return response.data;
+};
+
 // GET /api/datavis/general-insights
 export const getGeneralInsights = async (from: string, to: string, filters: { agents?:number[] }) => {
   const response = await visClient.get('/general-insights', {
