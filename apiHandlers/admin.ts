@@ -136,23 +136,25 @@ export const deleteGoal = async (id: number) => {
 
 export const getAssignations = async (from: string, to: string) => {
   const response = await adminClient.get('/assignation', {
+    ...getAuthHeader(),
     params: { from, to },
   });
   return response.data;
 };
 
 export const upsertAssignation = async (date: string, goalId: number) => {
-  const response = await adminClient.post('/upsert-assignation', { date, goalId });
+  const response = await adminClient.post('/upsert-assignation', { date, goalId }, getAuthHeader());
   return response.data;
 };
 
 export const deleteAssignationById = async (id: number) => {
-  const response = await adminClient.delete(`/delete-assignation-by-id/${id}`);
+  const response = await adminClient.delete(`/delete-assignation-by-id/${id}`, getAuthHeader());
   return response.data;
 };
 
 export const deleteAssignationByDate = async (date: string) => {
   const response = await adminClient.delete('/delete-assignation-by-date', {
+    ...getAuthHeader(),
     params: { date },
   });
   return response.data;
