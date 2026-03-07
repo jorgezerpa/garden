@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { GoalData } from '@/types/Goals';
 
 const API_BASE_URL = 'http://localhost:3001/api/admin';
 const JWT = 'YOUR_TOKEN_HERE'; // Temporary placeholder for your token logic
@@ -105,19 +106,10 @@ export const removeAgent = async (id: number) => {
  * GOALS
  */
 
-export interface GoalData {
-  name: string;
-  talkTimeMinutes?: number;
-  seeds?: number;
-  callbacks?: number;
-  leads?: number;
-  sales?: number;
-  numberOfCalls?: number;
-  numberOfLongCalls?: number;
-}
+
 
 export const createGoal = async (data: GoalData) => {
-  const response = await adminClient.post('/goals/create', data);
+  const response = await adminClient.post('/goals/create', data, getAuthHeader());
   return response.data;
 };
 
@@ -129,12 +121,12 @@ export const getCompanyGoals = async () => {
 };
 
 export const updateGoal = async (id: number, data: Partial<GoalData>) => {
-  const response = await adminClient.put(`/goals/update/${id}`, data);
+  const response = await adminClient.put(`/goals/update/${id}`, data, getAuthHeader());
   return response.data;
 };
 
 export const deleteGoal = async (id: number) => {
-  const response = await adminClient.delete(`/goals/delete/${id}`);
+  const response = await adminClient.delete(`/goals/delete/${id}`, getAuthHeader());
   return response.data;
 };
 
