@@ -4,14 +4,14 @@ import { TalkTime } from '@/components/TalkTime'
 import { useTheme } from 'next-themes'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { getAgentDayInsights, getAgentWeeklyGrowth } from '@/apiHandlers/agentDashboard'
+import { getAgentDayInsights, getAgentWeeklyGrowth, registerAgentState } from '@/apiHandlers/agentDashboard'
 
 export default function Home() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   // MINDSET COMPONENT
-  const [mindset, setMindset] = useState({ energy: 80, focus: 45, motivation: 70 });
+  const [mindset, setMindset] = useState({ energy: 0, focus: 0, motivation: 0 });
   const [agentInsights, setAgentInsights] = useState<{
     seeds: number,
     leads: number,
@@ -75,6 +75,15 @@ export default function Home() {
   }, [])
 
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
+
+  const handleRegisterMinset = () => {
+    try {
+
+      registerAgentState(mindset.energy, mindset.focus, mindset.motivation)
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   // Reusable card style for the "Glow" and "Blur" look
   const cardStyle = `
@@ -198,6 +207,9 @@ export default function Home() {
                 onChange={(v) => setMindset({...mindset, motivation: v})} 
               />
             </div>
+
+
+            <div onClick={handleRegisterMinset} className='cursor-pointer mx-auto rounded-xl py-3 bg-[#00C950] dark:bg-[#1A4F3D] text-white dark:text-[#00C950] text-center text-[13px] tracking-[0.2em]'>Register Mindset</div>
           </div>
 
         
@@ -448,7 +460,7 @@ const MindsetSlider = ({ id, label, color, value, onChange }: MindsetSliderProps
         <div className="absolute w-full h-[3px] bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
           <div 
             className={`h-full ${color} opacity-80`} 
-            style={{ width: `${value}%` }}
+            style={{ width: `${value*10}%` }}
           />
         </div>
 
@@ -456,7 +468,7 @@ const MindsetSlider = ({ id, label, color, value, onChange }: MindsetSliderProps
         <input
           type="range"
           min="0"
-          max="100"
+          max="10"
           value={value}
           onChange={(e) => onChange(parseInt(e.target.value))}
           className={styles}
