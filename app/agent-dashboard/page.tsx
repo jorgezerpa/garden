@@ -57,8 +57,14 @@ export default function Home() {
   useEffect(()=>{
     (async()=>{
       try {
-        const response = await getAgentDayInsights("2024-05-20")
-        const weeklyGrowthDataResponse = await getAgentWeeklyGrowth("2024-05-20")
+        const dateStr = [
+          date.getFullYear(),
+          String(date.getMonth() + 1).padStart(2, '0'),
+          String(date.getDate()).padStart(2, '0')
+        ].join('-');
+
+        const response = await getAgentDayInsights(dateStr)
+        const weeklyGrowthDataResponse = await getAgentWeeklyGrowth(dateStr)
         setAgentInsights(response)
         setWeeklyGrowthData(weeklyGrowthDataResponse)
         setMindset({ energy: response.energy, focus: response.focus, motivation: response.motivation })

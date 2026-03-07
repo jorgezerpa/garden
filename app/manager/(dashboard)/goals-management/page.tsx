@@ -137,8 +137,13 @@ export default function GoalsManagement() {
 
 
         <div className="grid grid-cols-1 sm:grid-cols-4 lg:grid-cols-7 gap-4">
-          {getWeekDates().map((date) => {
-            const dateStr = date.toISOString().split('T')[0];
+          {getWeekDates().map((date, i) => {
+            const dateStr = [
+              date.getFullYear(),
+              String(date.getMonth() + 1).padStart(2, '0'),
+              String(date.getDate()).padStart(2, '0')
+            ].join('-');
+            console.log(i, date, dateStr)
             const assignation = assignations.find(a => a.date.toString().split('T')[0] === dateStr);
             const assignedGoal = goals.find(g => g.id === assignation?.goalId);
 
@@ -173,7 +178,9 @@ export default function GoalsManagement() {
                 ) : (
                   /* Unassigned State: Ghost Button */
                   <button 
-                    onClick={() => setAssigningDate(dateStr)}
+                    onClick={() => {
+                      setAssigningDate(dateStr)
+                    }}
                     className="w-full mt-auto py-4 border-2 border-dashed border-slate-100 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center group-hover:border-green-500/30 group-hover:bg-green-500/5 transition-all"
                   >
                     <span className="text-[10px] font-black uppercase text-slate-300 group-hover:text-green-500">+ Assign</span>
