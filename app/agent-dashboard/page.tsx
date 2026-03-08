@@ -5,6 +5,7 @@ import { useTheme } from 'next-themes'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { getAgentDayInsights, getAgentWeeklyGrowth, getAssignedSchema, registerAgentState } from '@/apiHandlers/agentDashboard'
+import { logoutUser } from '@/apiHandlers/auth'
 
 export default function Home() {
   const { theme, setTheme } = useTheme()
@@ -233,6 +234,10 @@ export default function Home() {
                 />
               )}
             </div>
+          </button>
+
+          <button type='button' className='text-[10px] uppercase tracking-[0.2em] cursor-pointer' onClick={()=>logoutUser("/")}>
+            logout
           </button>
         </div>
 
