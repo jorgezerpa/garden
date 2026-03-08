@@ -8,7 +8,7 @@ const INTEGRATIONS = [
     name: "LeadDesk",
     steps: [
       "Generate an API public key and private key on API Keys section.",
-      "Provide this url 'https://' to your LeadDesk webhook.",
+      `Provide this url 'https://public_key:private_key@garden-backend-omega.vercel.com/api/leaddesk/webhook' to your LeadDesk webhook.`,
       "Done! every time a call is performed, it will be recorder and displayed on your dashboard."
     ]
   },
