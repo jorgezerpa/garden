@@ -29,7 +29,7 @@ const navItemsMainAdmin = [
   { id: 'agents-comparisson', label: 'Agents Comparison', desc: 'Rankings & Performance' },
   { id: 'goals-management', label: 'Goals Management', desc: 'Create and assign goals' },
   { id: 'blocks-management', label: 'Blocks Management', desc: 'Create and assign block schemas' },
-  { id: 'team-heatmap', label: 'Team Heatmap', desc: 'Productivity Windows' },
+  // { id: 'team-heatmap', label: 'Team Heatmap', desc: 'Productivity Windows' },
   // { id: 'export-and-reporting', label: 'Export and Reporting', desc: 'CSV & PDF Engine' },
   { id: 'long-term-data-visualization', label: 'Long Term Data Visualization', desc: 'Behavioral Analytics' },
   { id: 'integrations', label: 'Integrations', desc: 'Connect with 3rd party tool' },
@@ -41,7 +41,7 @@ const navItemsManager = [
   { id: 'agents-comparisson', label: 'Agents Comparison', desc: 'Rankings & Performance' },
   { id: 'goals-management', label: 'Goals Managements', desc: 'Create and assign goals' },
     { id: 'blocks-management', label: 'Blocks Management', desc: 'Create and assign block schemas' },
-  { id: 'team-heatmap', label: 'Team Heatmap', desc: 'Productivity Windows' },
+  // { id: 'team-heatmap', label: 'Team Heatmap', desc: 'Productivity Windows' },
   // { id: 'export-and-reporting', label: 'Export and Reporting', desc: 'CSV & PDF Engine' },
   { id: 'long-term-data-visualization', label: 'Long Term Data Visualization', desc: 'Behavioral Analytics' },
 ];
