@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3001/api/agent-dashboard';
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/agent-dashboard`;
 const JWT = 'YOUR_TOKEN_HERE'; 
 
 const client = axios.create({

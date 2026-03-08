@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3001/api/datavis';
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/datavis`;
 const JWT = 'YOUR_TOKEN_HERE'; 
 
 const visClient = axios.create({

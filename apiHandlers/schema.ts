@@ -2,7 +2,7 @@ import axios from 'axios';
 import { BlockType, CreateSchemaData, SchemaBlock, UpdateSchemaData } from "@/types/BlockSchemas"
 
 // Assuming this is in the same file or sharing the client from the previous step
-const API_BASE_URL = 'http://localhost:3001/api/schema';
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/schema`;
 const JWT = 'YOUR_TOKEN_HERE'; 
 
 const schemaClient = axios.create({
