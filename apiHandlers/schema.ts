@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { BlockType, CreateSchemaData, SchemaBlock, UpdateSchemaData } from "@/types/BlockSchemas"
 
 // Assuming this is in the same file or sharing the client from the previous step
 const API_BASE_URL = 'http://localhost:3001/api/schema';
@@ -11,28 +12,6 @@ const schemaClient = axios.create({
   },
 });
 
-/**
- * Interfaces
- */
-
-export interface SchemaDay {
-  dayOfWeek: number; // 0-6
-  startTime: string;
-  endTime: string;
-  // Add other specific day properties based on your SchemaController
-}
-
-export interface CreateSchemaData {
-  name: string;
-  type: string;
-  days: SchemaDay[];
-}
-
-export interface UpdateSchemaData {
-  name?: string;
-  type?: string;
-  days?: SchemaDay[];
-}
 
 /**
  * API Calls
@@ -40,7 +19,7 @@ export interface UpdateSchemaData {
 
 // POST /api/admin/schemas/create
 export const createSchema = async (data: CreateSchemaData) => {
-  const response = await schemaClient.post('/create', data);
+  const response = await schemaClient.post('/create', data, getAuthHeader());
   return response.data;
 };
 
@@ -55,21 +34,40 @@ export const getSchemasList = async (page: number = 1, limit: number = 10) => {
 
 // GET /api/admin/schemas/:id
 export const getSchemaById = async (id: number) => {
-  const response = await schemaClient.get(`/${id}`);
+  const response = await schemaClient.get(`/${id}`, getAuthHeader());
   return response.data;
 };
 
 // DELETE /api/admin/schemas/:id
 export const deleteSchema = async (id: number) => {
-  const response = await schemaClient.delete(`/${id}`);
+  const response = await schemaClient.delete(`/${id}`, getAuthHeader());
   return response.data;
 };
 
 // PUT /api/admin/schemas/update/:id
 export const updateSchema = async (id: number, data: UpdateSchemaData) => {
-  const response = await schemaClient.put(`/update/${id}`, data);
+  const response = await schemaClient.put(`/update/${id}`, data, getAuthHeader());
   return response.data;
 };
+
+// getSchemaAssignations, upsertSchemaAssignation, deleteSchemaAssignationById
+export const getSchemaAssignations = async(from: string, to: string) => {
+  const response = await schemaClient.get('/assignation', {
+    ...getAuthHeader(),
+    params: { from, to },
+  });
+  return response.data;
+}
+
+export const upsertSchemaAssignation = async(date: string, id: number) => {
+  const response = await schemaClient.post('/upsert-assignation', { date, schemaId:id }, getAuthHeader());
+  return response.data;
+}
+
+export const deleteSchemaAssignationById = async(id: number) => {
+  const response = await schemaClient.delete(`/delete-assignation-by-id/${id}`, getAuthHeader());
+  return response.data;
+}
 
 ///////////////////
 ///////////////////
