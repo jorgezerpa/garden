@@ -4,13 +4,31 @@ import { TalkTime } from '@/components/TalkTime'
 import { useTheme } from 'next-themes'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { getAgentDayInsights, getAgentWeeklyGrowth, registerAgentState } from '@/apiHandlers/agentDashboard'
+import { getAgentDayInsights, getAgentWeeklyGrowth, getAssignedSchema, registerAgentState } from '@/apiHandlers/agentDashboard'
 
 export default function Home() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   // MINDSET COMPONENT
+  
+  const [assignedSchema, setAssignedSchema] = useState<
+  {
+    id: number
+    name: string
+    companyId: number
+    creatorId: 1
+    blocks: { 
+      id: number
+      startMinutesFromMidnight: number
+      endMinutesFromMidnight: number
+      blockType: "WORKING"|"REST"
+      name: string
+      schemaId: number,
+   }[]
+  }
+  |null>(null);
+
   const [mindset, setMindset] = useState({ energy: 0, focus: 0, motivation: 0 });
   const [agentInsights, setAgentInsights] = useState<{
     seeds: number,
@@ -62,17 +80,46 @@ export default function Home() {
           String(date.getMonth() + 1).padStart(2, '0'),
           String(date.getDate()).padStart(2, '0')
         ].join('-');
-
         const response = await getAgentDayInsights(dateStr)
-        const weeklyGrowthDataResponse = await getAgentWeeklyGrowth(dateStr)
-        setAgentInsights(response)
-        setWeeklyGrowthData(weeklyGrowthDataResponse)
         setMindset({ energy: response.energy, focus: response.focus, motivation: response.motivation })
       } catch (error) {
         console.log("error agent dashboard")
       }
     })()
   }, [])
+
+  useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const dateStr = [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, '0'),
+        String(date.getDate()).padStart(2, '0')
+      ].join('-');
+
+      const [insights, weeklyGrowth, schema] = await Promise.all([
+        getAgentDayInsights(dateStr),
+        getAgentWeeklyGrowth(dateStr),
+        getAssignedSchema(dateStr)
+      ]);
+
+      setAgentInsights(insights);
+      setWeeklyGrowthData(weeklyGrowth);
+      setAssignedSchema(schema);
+    } catch (error) {
+      console.log("error agent dashboard", error);
+    }
+  };
+
+  // 1. Run immediately on mount
+  fetchData();
+
+  // 2. Set up the 10-second interval
+  const intervalId = setInterval(fetchData, 20000);
+
+  // 3. Clean up on unmount
+  return () => clearInterval(intervalId);
+}, []); 
 
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
 
@@ -102,6 +149,25 @@ export default function Home() {
   }).format(date);
 
   if (!mounted) return null
+
+  const getFormatedHour = (minutesFromMidnight0: number, minutesFromMidnight1: number): string => {
+    const formatTime = (totalMinutes: number): string => {
+      const hours = Math.floor(totalMinutes / 60);
+      const mins = totalMinutes % 60;
+      
+      // Ensure 2-digit military format (00:00 - 23:59)
+      const HH = String(hours).padStart(2, '0');
+      const MM = String(mins).padStart(2, '0');
+      
+      return `${HH}:${MM}`;
+    };
+
+    return `${formatTime(minutesFromMidnight0)} - ${formatTime(minutesFromMidnight1)}`;
+  };
+
+// Example Usage:
+// getFormatedHour(540, 1020); // "09:00 - 17:00"
+// getFormatedHour(30, 90);    // "00:30 - 01:30"
 
   return (
     <div className="min-h-screen transition-colors duration-500 bg-slate-100 dark:bg-[#1a1f2b] text-slate-800 dark:text-slate-200 p-4 md:p-6 flex flex-col gap-4 font-sans selection:bg-green-500/30">
@@ -320,14 +386,19 @@ export default function Home() {
                 Call Blocks
               </h3>
               {/* Icon Placeholder */}
-              <div className="w-4 h-4 bg-slate-200 dark:bg-slate-700 rounded" />
+              {/* <div className="w-4 h-4 bg-slate-200 dark:bg-slate-700 rounded" /> */}
             </div>
             
-            <div className="flex flex-col gap-1">
-              <CallBlock time="08:30 - 09:00" status="upcoming" />
-              <CallBlock time="09:30 - 11:30" status="active" />
-              <CallBlock time="12:15 - 15:00" status="upcoming" />
-              <CallBlock time="15:30 - 18:30" status="locked" />
+            <div className="flex flex-col gap-1 max-h-[400px] overflow-y-scroll">
+              {
+                assignedSchema?.blocks.map(block => (
+                  <CallBlock time={getFormatedHour(block.startMinutesFromMidnight, block.endMinutesFromMidnight)} status={block.blockType} />
+
+                ))
+              }
+              {
+                !assignedSchema && <div className='text-[11px] tracking-[0.2em]'>No schema assigned today</div>
+              }
             </div>
           </div>
         </section>
@@ -557,7 +628,7 @@ const StatRow = ({ id, label, value }: StatRowProps) => {
 
 interface CallBlockProps {
   time: string;
-  status: 'active' | 'upcoming' | 'locked';
+  status: string;
 }
 
 
@@ -587,22 +658,25 @@ const CallBlock = ({ time, status }: CallBlockProps) => {
     }
   };
 
-  const config = statusConfig[status];
+  // const config = statusConfig[status];
 
   return (
     <div className={`flex items-center justify-between py-2.5 px-2 rounded-xl transition-colors ${status === 'active' ? 'bg-green-500/5' : ''}`}>
       <div className="flex items-center gap-3">
         {/* Status Dot */}
-        <div className={`w-2 h-2 rounded-full ${config.dot}`} />
+        {/* <div className={`w-2 h-2 rounded-full ${config.dot}`} /> */}
+        <div className={`w-2 h-2 rounded-full`} />
         
-        <span className={`text-[12px] tabular-nums ${config.text}`}>
+        {/* <span className={`text-[12px] tabular-nums ${config.text}`}> */}
+        <span className={`text-[12px] tabular-nums`}>
           {time}
         </span>
       </div>
       
       {/* Status Badge */}
-      <div className={`text-[9px] px-2.5 py-1 rounded-lg border uppercase tracking-tighter font-bold ${config.badge}`}>
-        {config.label}
+      {/* <div className={`text-[9px] px-2.5 py-1 rounded-lg border uppercase tracking-tighter font-bold ${config.badge}`}> */}
+      <div className={`text-[9px] px-2.5 py-1 rounded-lg border uppercase tracking-tighter font-bold`}>
+        {status}
       </div>
     </div>
   );

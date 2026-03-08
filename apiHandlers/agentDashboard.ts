@@ -27,6 +27,14 @@ export const getAgentWeeklyGrowth = async (date: string) => {
   return response.data;
 };
 
+export const getAssignedSchema = async (date: string) => {
+  const response = await client.get('/get-assigned-schema', {
+    ...getAuthHeader(),
+    params: { date },
+  });
+  return response.data;
+};
+
 export const registerAgentState = async (energy: number, focus: number, motivation: number) => {
   const response = await client.post('/register-agent-state', { energy, focus, motivation }, getAuthHeader());
   return response.data;
