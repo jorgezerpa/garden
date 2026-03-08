@@ -153,7 +153,6 @@ export default function BlocksManagement() {
       endMinutesFromMidnight: parseTime(b.endTime),
       blockType: b.blockType,
     })) as SchemaBlock[];
-    console.log(formattedBlocks)
     try {
       if (editingSchemaId) {
         // Based on the provided type, the update payload uses 'block' instead of 'blocks'
