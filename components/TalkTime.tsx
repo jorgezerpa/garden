@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react';
 
-export function TalkTime({time, goal, total_calls, total_deep_calls, talkTimeGoal}:{time:number, goal:number, total_calls: number, total_deep_calls: number, talkTimeGoal: number}) {
+export function TalkTime({time, goal, total_calls, total_deep_calls}:{time:number, goal:number, total_calls: number, total_deep_calls: number}) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
