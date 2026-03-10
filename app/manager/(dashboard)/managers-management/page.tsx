@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { addManager, editManager, getManagersList, removeManager } from '@/apiHandlers/admin';
 import { Spinner } from '@/components/Spinner';
+import { Toast } from '@/components/Toast'; // Assuming this is your file path
 
 interface Manager {
   id: number;
@@ -12,7 +13,6 @@ interface Manager {
   };
 }
 
-// Initial state for the loading object
 const initialLoading = {
   isCreating: false,
   isUpdating: false,
@@ -22,7 +22,8 @@ const initialLoading = {
 
 export default function ManagersManagement() {
   const [managers, setManagers] = useState<Manager[]>([]);
-  const [loading, setLoading] = useState(initialLoading); // Structured loading state
+  const [loading, setLoading] = useState(initialLoading);
+  const [toastError, setToastError] = useState<string | null>(null);
   
   const [expanded, setExpanded] = useState<{ id: number | null, mode: 'details' | 'modify' | null }>({
     id: null,
@@ -39,7 +40,7 @@ export default function ManagersManagement() {
       const managers = await getManagersList(1, 200);
       setManagers(managers.data);
     } catch (error) {
-      console.log(error);
+      setToastError("Failed to load managers list.");
     } finally {
       setLoading(prev => ({ ...prev, isFetchingManagers: false }));
     }
@@ -49,7 +50,6 @@ export default function ManagersManagement() {
     fetchManagers();
   }, []);
 
-  // --- Handlers ---
   const toggleExpand = (id: number, mode: 'details' | 'modify', manager?: any) => {
     if (expanded.id === id && expanded.mode === mode) {
       setExpanded({ id: null, mode: null });
@@ -68,7 +68,7 @@ export default function ManagersManagement() {
       setNewManager({ name: '', email: '', password: '' });
       setShowAddForm(false);
     } catch (error) {
-      console.log(error);
+      setToastError("Could not create manager. Please check your details.");
     } finally {
       setLoading(prev => ({ ...prev, isCreating: false }));
     }
@@ -80,7 +80,7 @@ export default function ManagersManagement() {
       await removeManager(manager.id);
       await fetchManagers();
     } catch (error) {
-      console.log(error);
+      setToastError("Failed to terminate manager.");
     } finally {
       setLoading(prev => ({ ...prev, isDeleting: false }));
     }
@@ -92,7 +92,7 @@ export default function ManagersManagement() {
       await editManager(id, { email: updatingInputs.email, name: updatingInputs.name, password: updatingInputs.password });
       await fetchManagers();
     } catch (error) {
-      console.log(error);
+      setToastError("Failed to update manager credentials.");
     } finally {
       setLoading(prev => ({ ...prev, isUpdating: false }));
     }
@@ -100,6 +100,11 @@ export default function ManagersManagement() {
 
   return (
     <div className="space-y-8 pb-20 font-sans">
+      
+      {/* Toast Notification */}
+      {toastError && (
+        <Toast message={toastError} onClose={() => setToastError(null)} />
+      )}
 
       {/* --- ADD AGENT CENTER BUTTON --- */}
       <div className="flex flex-col items-center">
@@ -164,7 +169,6 @@ export default function ManagersManagement() {
                 </button>
               </div>
 
-              {/* DROPDOWN: MODIFY */}
               {expanded.id === manager.id && expanded.mode === 'modify' && (
                 <div className="px-6 pb-8 pt-4 border-t border-slate-100 dark:border-white/5">
                   <div className="p-6 bg-slate-50 dark:bg-white/5 rounded-[2rem] border border-dashed border-slate-200 dark:border-white/10">

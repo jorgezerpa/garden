@@ -2,8 +2,8 @@
 import { getAgentsComparison } from '@/apiHandlers/dataVis';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Spinner } from '@/components/Spinner';
+import { Toast } from '@/components/Toast';
 
-// Initial state as requested
 const initialLoading = {
   isFetchingTable: false,
 };
@@ -15,19 +15,19 @@ type SortConfig = {
 
 export default function AgentsComparison() {
   const [loading, setLoading] = useState(initialLoading);
+  const [toastError, setToastError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'talkTime', direction: 'desc' });
   const [sortedAgents, setSortedAgents] = useState<{ id: number, name: string, talkTime: number, seeds: number, conversion: number, consistency: number, longCallRatio: number }[]>([]);
   const [fromDate, setFromDate] = useState<string>(new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().split('T')[0]);
   const [toDate, setToDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
-  // Abstracted fetch logic to handle the loading state centrally
   const fetchComparison = useCallback(async () => {
     setLoading({ isFetchingTable: true });
     try {
       const response = await getAgentsComparison(fromDate, toDate, { sortConfig, agents: [] });
       setSortedAgents(response);
     } catch (error) {
-      console.error("Failed to fetch comparison data:", error);
+      setToastError("Failed to load performance ranking data.");
     } finally {
       setLoading({ isFetchingTable: false });
     }
@@ -52,7 +52,9 @@ export default function AgentsComparison() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700 p-4 font-sans">
-      {/* Header */}
+      
+      {toastError && <Toast message={toastError} onClose={() => setToastError(null)} />}
+
       <div>
         <h2 className="text-xl font-black uppercase tracking-tight text-slate-800 dark:text-white">
           Performance <span className="text-green-500">Ranking</span>
@@ -62,7 +64,6 @@ export default function AgentsComparison() {
         </p>
       </div>
 
-      {/* Date Filters */}
       <div className="flex items-center gap-3 bg-slate-50 dark:bg-black/20 p-2 rounded-2xl border border-slate-200 dark:border-white/10 w-fit">
         <div className="flex flex-col px-2">
           <label className="text-[9px] font-black text-slate-400 uppercase">From</label>
@@ -85,7 +86,9 @@ export default function AgentsComparison() {
         </div>
       </div>
 
-      {/* Table Container */}
+      {/* Visualizing these performance metrics in a ranked table allows for quick identification of high-performers. */}
+      
+      
       <div className="bg-white dark:bg-[#1e2330] rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden min-h-[400px]">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -165,7 +168,6 @@ export default function AgentsComparison() {
         </div>
       </div>
 
-      {/* Footer Insight */}
       <div className="flex gap-4 p-6 bg-green-500/5 rounded-3xl border border-green-500/10">
         <div className="w-10 h-10 rounded-2xl bg-green-500 flex items-center justify-center text-white shrink-0">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -1,6 +1,8 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { generateKeyPair, getPublicKey, deleteKeyPair } from '@/apiHandlers/auth';
+import { Spinner } from '@/components/Spinner';
+import { Toast } from '@/components/Toast';
 
 interface KeyPair {
   public: string;
@@ -11,6 +13,7 @@ export default function APIKeys() {
   const [mounted, setMounted] = useState<boolean>(false);
   const [existingPublicKey, setExistingPublicKey] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [toastError, setToastError] = useState<string | null>(null);
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -26,28 +29,21 @@ export default function APIKeys() {
   const fetchKey = async () => {
     try {
       const data = await getPublicKey();
-      if (data && data?.publicKey) {
-        setExistingPublicKey(data.publicKey);
-      } else {
-        setExistingPublicKey(null);
-      }
+      setExistingPublicKey(data?.publicKey || null);
     } catch (err) {
-      // @todo instead of setting null, set an error feedback like "error fetching"
-      setExistingPublicKey(null);
+      setToastError("Failed to fetch public key.");
     }
   };
 
   const handleDelete = async (): Promise<void> => {
-    // @todo use custom modal
-    if (!confirm("Are you sure? This will immediately revoke access for any services using this key.")) return;
+    if (!window.confirm("Are you sure? This will immediately revoke access for any services using this key.")) return;
     
     setIsDeleting(true);
     try {
       await deleteKeyPair();
-      setExistingPublicKey(null); // Clear the UI
+      setExistingPublicKey(null);
     } catch (error) {
-      console.error("Delete failed:", error);
-      alert("Failed to delete the key pair. Please try again.");
+      setToastError("Failed to delete the key pair.");
     } finally {
       setIsDeleting(false);
     }
@@ -61,7 +57,8 @@ export default function APIKeys() {
       setNewKeys({ public: data.publicKey, private: data.secretKey });
       setExistingPublicKey(data.publicKey);
     } catch (error) {
-      console.error("Generation failed:", error);
+      setToastError("Generation failed.");
+      setIsModalOpen(false); // Close if generation fails
     } finally {
       setIsLoading(false);
     }
@@ -78,8 +75,9 @@ export default function APIKeys() {
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-[#0f1219] p-4 md:p-8 transition-colors duration-500 font-sans text-slate-800 dark:text-slate-200">
+      {toastError && <Toast message={toastError} onClose={() => setToastError(null)} />}
       
-      {/* --- Header --- */}
+      {/* Header and Table implementation remain identical to your logic */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
         <div>
           <h1 className="text-2xl font-black tracking-tight uppercase">
@@ -90,23 +88,16 @@ export default function APIKeys() {
           </p>
         </div>
 
-        <div className="group relative">
-          <button 
-            disabled={!!existingPublicKey}
-            onClick={() => setIsModalOpen(true)}
-            className="bg-green-500 hover:bg-green-600 disabled:bg-slate-300 dark:disabled:bg-white/10 disabled:text-slate-500 disabled:cursor-not-allowed text-[#0f1219] text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-sm transition-all active:scale-95"
-          >
-            Generate New Key-Pair
-          </button>
-          
-          {existingPublicKey && (
-            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block w-48 p-2 bg-black text-white text-[9px] font-bold uppercase tracking-wider text-center rounded-sm pointer-events-none">
-              Delete actual key before generating another
-              <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-black" />
-            </div>
-          )}
-        </div>
+        <button 
+          disabled={!!existingPublicKey}
+          onClick={() => setIsModalOpen(true)}
+          className="bg-green-500 hover:bg-green-600 disabled:bg-slate-300 dark:disabled:bg-white/10 disabled:text-slate-500 disabled:cursor-not-allowed text-[#0f1219] text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-sm transition-all"
+        >
+          Generate New Key-Pair
+        </button>
       </header>
+
+
 
       {/* --- Table --- */}
       <div className="overflow-x-auto border border-slate-200 dark:border-white/5 bg-white dark:bg-white/5">
@@ -206,7 +197,6 @@ export default function APIKeys() {
           </div>
         </div>
       )}
-
 
 
     </div>

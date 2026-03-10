@@ -11,6 +11,7 @@ import {
 } from '@/apiHandlers/schema';
 import { CreateSchemaData, Schema, SchemaBlock } from '@/types/BlockSchemas';
 import { Spinner } from '@/components/Spinner';
+import { Toast } from '@/components/Toast';
 
 const formatTime = (minutes: number) => {
   const h = Math.floor(minutes / 60).toString().padStart(2, '0');
@@ -34,16 +35,17 @@ const initialLoading = {
   isFetchingBlockSchemas: false,
   isFetchingAssignations: false,
   isCreatingBlockSchema: false,
-  isEditingBlockSchema: null as number | null, // Stores Schema ID
-  isDeletingBlockSchema: null as number | null, // Stores Schema ID
-  isAssigningBlockSchema: null as string | null, // Stores Date String
-  isUnassigningBlockSchema: null as number | null, // Stores Assignation ID
+  isEditingBlockSchema: null as number | null,
+  isDeletingBlockSchema: null as number | null,
+  isAssigningBlockSchema: null as string | null,
+  isUnassigningBlockSchema: null as number | null,
 };
 
 export default function BlocksManagement() {
   const [schemas, setSchemas] = useState<Schema[]>([]);
   const [assignations, setAssignations] = useState<any[]>([]);
   const [loading, setLoading] = useState(initialLoading);
+  const [toastError, setToastError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   
   const [assigningDate, setAssigningDate] = useState<string | null>(null);
@@ -67,8 +69,9 @@ export default function BlocksManagement() {
       const data = await getSchemasList(1, 50);
       const list = Array.isArray(data) ? data : (data?.data || []);
       setSchemas(list);
-    } catch (error) { console.error(error); }
-    finally { setLoading(prev => ({ ...prev, isFetchingBlockSchemas: false })); }
+    } catch (error) { 
+      setToastError("Failed to fetch schemas."); 
+    } finally { setLoading(prev => ({ ...prev, isFetchingBlockSchemas: false })); }
   };
 
   const fetchWeekAssignations = async (baseDate: string) => {
@@ -85,8 +88,9 @@ export default function BlocksManagement() {
         sunday.toISOString().split('T')[0]
       );
       setAssignations(Array.isArray(data) ? data : []);
-    } catch (error) { console.error(error); }
-    finally { setLoading(prev => ({ ...prev, isFetchingAssignations: false })); }
+    } catch (error) { 
+      setToastError("Failed to fetch weekly assignments."); 
+    } finally { setLoading(prev => ({ ...prev, isFetchingAssignations: false })); }
   };
 
   const handleAssign = async (date: string, schemaId: number) => {
@@ -95,8 +99,9 @@ export default function BlocksManagement() {
     try {
       await upsertSchemaAssignation(date, schemaId);
       await fetchWeekAssignations(selectedDate);
-    } catch (error) { console.error(error); }
-    finally { setLoading(prev => ({ ...prev, isAssigningBlockSchema: null })); }
+    } catch (error) { 
+      setToastError("Failed to assign schema."); 
+    } finally { setLoading(prev => ({ ...prev, isAssigningBlockSchema: null })); }
   };
 
   const handleUnassign = async (assignationId: number) => {
@@ -104,8 +109,9 @@ export default function BlocksManagement() {
     try {
       await deleteSchemaAssignationById(assignationId);
       await fetchWeekAssignations(selectedDate);
-    } catch (error) { console.error(error); }
-    finally { setLoading(prev => ({ ...prev, isUnassigningBlockSchema: null })); }
+    } catch (error) { 
+      setToastError("Failed to unassign schema."); 
+    } finally { setLoading(prev => ({ ...prev, isUnassigningBlockSchema: null })); }
   };
 
   const handleDeleteSchema = async (id: number) => {
@@ -115,8 +121,9 @@ export default function BlocksManagement() {
       await deleteSchema(id);
       await fetchSchemas();
       fetchWeekAssignations(selectedDate);
-    } catch (error) { console.error(error); }
-    finally { setLoading(prev => ({ ...prev, isDeletingBlockSchema: null })); }
+    } catch (error) { 
+      setToastError("Failed to delete schema."); 
+    } finally { setLoading(prev => ({ ...prev, isDeletingBlockSchema: null })); }
   };
 
   const handleSaveSchema = async () => {
@@ -142,12 +149,14 @@ export default function BlocksManagement() {
       }
       setShowModal(false);
       await fetchSchemas();
-    } catch (error) { console.error(error); }
-    finally {
+    } catch (error) { 
+      setToastError("Failed to save schema."); 
+    } finally {
       setLoading(prev => ({ ...prev, isEditingBlockSchema: null, isCreatingBlockSchema: false }));
     }
   };
 
+  // ... (rest of the helper functions: getWeekDates, openCreateModal, openEditModal, etc. remain the same)
   const getWeekDates = () => {
     const date = new Date(selectedDate);
     const day = date.getDay();
@@ -188,7 +197,9 @@ export default function BlocksManagement() {
 
   return (
     <div className="space-y-8 pb-20 font-sans">
-      {/* Header */}
+      
+      
+{/* Header */}
       <div className="flex justify-between items-end">
         <div>
           <label className="text-[9px] font-black uppercase tracking-widest text-indigo-500 mb-1 block">Schedules</label>
@@ -437,6 +448,10 @@ export default function BlocksManagement() {
           </div>
         </div>
       )}
+
+
+      {toastError && <Toast message={toastError} onClose={() => setToastError(null)} />}
+
     </div>
   );
 }

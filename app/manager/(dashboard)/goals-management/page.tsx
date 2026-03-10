@@ -6,6 +6,7 @@ import {
 } from '@/apiHandlers/admin';
 import { GoalData } from '@/types/Goals';
 import { Spinner } from '@/components/Spinner';
+import { Toast } from '@/components/Toast';
 
 const EMPTY_GOAL: GoalData = { 
   name: "", seeds: 0, leads: 0, sales: 0, numberOfCalls: 0, numberOfLongCalls: 0, talkTimeMinutes: 0 
@@ -14,17 +15,18 @@ const EMPTY_GOAL: GoalData = {
 const initialLoading = {
   isFetchingWeeklyGoalSchedule: false,
   isFetchingGoals: false,
-  isUnassigning: null as number | null, // Stores the assignation ID
-  isAssigning: null as string | null,    // Stores the date string
+  isUnassigning: null as number | null,
+  isAssigning: null as string | null,
   isCreatingGoal: false,
-  isEditingGoal: null as number | null,  // Stores the goal ID
-  isDeletingGoal: null as number | null, // Stores the goal ID
+  isEditingGoal: null as number | null,
+  isDeletingGoal: null as number | null,
 };
 
 export default function GoalsManagement() {
   const [goals, setGoals] = useState<GoalData[]>([]);
   const [assignations, setAssignations] = useState<any[]>([]);
   const [loading, setLoading] = useState(initialLoading);
+  const [toastError, setToastError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   
   const [newGoal, setNewGoal] = useState<GoalData>(EMPTY_GOAL);
@@ -46,8 +48,9 @@ export default function GoalsManagement() {
     try {
       const data = await getCompanyGoals();
       setGoals(data);
-    } catch (error) { console.error(error); }
-    finally { setLoading(prev => ({ ...prev, isFetchingGoals: false })); }
+    } catch (error) { 
+      setToastError("Failed to fetch goals."); 
+    } finally { setLoading(prev => ({ ...prev, isFetchingGoals: false })); }
   };
 
   const fetchWeekAssignations = async (baseDate: string) => {
@@ -64,8 +67,9 @@ export default function GoalsManagement() {
         sunday.toISOString().split('T')[0]
       );
       setAssignations(data);
-    } catch (error) { console.error(error); }
-    finally { setLoading(prev => ({ ...prev, isFetchingWeeklyGoalSchedule: false })); }
+    } catch (error) { 
+      setToastError("Failed to fetch schedule."); 
+    } finally { setLoading(prev => ({ ...prev, isFetchingWeeklyGoalSchedule: false })); }
   };
 
   const handleAssign = async (date: string, goalId: number) => {
@@ -74,8 +78,9 @@ export default function GoalsManagement() {
     try {
       await upsertAssignation(date, goalId);
       await fetchWeekAssignations(selectedDate);
-    } catch (error) { console.error(error); }
-    finally { setLoading(prev => ({ ...prev, isAssigning: null })); }
+    } catch (error) { 
+      setToastError("Failed to assign goal."); 
+    } finally { setLoading(prev => ({ ...prev, isAssigning: null })); }
   };
 
   const handleUnassign = async (assignationId: number) => {
@@ -83,8 +88,9 @@ export default function GoalsManagement() {
     try {
       await deleteAssignationById(assignationId);
       await fetchWeekAssignations(selectedDate);
-    } catch (error) { console.error(error); }
-    finally { setLoading(prev => ({ ...prev, isUnassigning: null })); }
+    } catch (error) { 
+      setToastError("Failed to unassign goal."); 
+    } finally { setLoading(prev => ({ ...prev, isUnassigning: null })); }
   };
 
   const handleCreation = async () => {
@@ -94,8 +100,9 @@ export default function GoalsManagement() {
       await fetchGoals();
       setNewGoal(EMPTY_GOAL);
       setShowAddForm(false);
-    } catch (error) { console.error(error); }
-    finally { setLoading(prev => ({ ...prev, isCreatingGoal: false })); }
+    } catch (error) { 
+      setToastError("Failed to create goal."); 
+    } finally { setLoading(prev => ({ ...prev, isCreatingGoal: false })); }
   };
 
   const handleDelete = async (goalId: number) => {
@@ -104,8 +111,9 @@ export default function GoalsManagement() {
     try {
       await deleteGoal(goalId);
       await fetchGoals();
-    } catch (error) { console.error(error); }
-    finally { setLoading(prev => ({ ...prev, isDeletingGoal: null })); }
+    } catch (error) { 
+      setToastError("Failed to delete goal."); 
+    } finally { setLoading(prev => ({ ...prev, isDeletingGoal: null })); }
   };
 
   const handleUpdate = async (goalId: number) => {
@@ -114,8 +122,9 @@ export default function GoalsManagement() {
       await updateGoal(goalId, updatingGoal);
       await fetchGoals();
       setEditingId(null);
-    } catch (error) { console.error(error); }
-    finally { setLoading(prev => ({ ...prev, isEditingGoal: null })); }
+    } catch (error) { 
+      setToastError("Failed to update goal."); 
+    } finally { setLoading(prev => ({ ...prev, isEditingGoal: null })); }
   };
 
   const getWeekDates = () => {
@@ -132,7 +141,8 @@ export default function GoalsManagement() {
 
   return (
     <div className="space-y-8 pb-20 font-sans">
-      {/* Header */}
+      {toastError && <Toast message={toastError} onClose={() => setToastError(null)} />}
+      
       <div className="flex justify-between items-end">
         <div>
           <label className="text-[9px] font-black uppercase tracking-widest text-green-500 mb-1 block">Management</label>
@@ -146,7 +156,6 @@ export default function GoalsManagement() {
         </button>
       </div>
 
-      {/* Weekly Schedule Section */}
       <section className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-[2.5rem] p-8">
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
           <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Weekly Goal Schedule</h3>
@@ -214,7 +223,6 @@ export default function GoalsManagement() {
         )}
       </section>
 
-      {/* Goal Creation Form */}
       {showAddForm && (
         <div className="bg-white dark:bg-[#1e2330] border border-green-500/30 rounded-[2rem] p-8 shadow-xl">
           <h5 className="text-[10px] font-black text-green-500 uppercase tracking-[0.2em] mb-6 text-center">Configure New Objective</h5>
@@ -242,7 +250,6 @@ export default function GoalsManagement() {
         </div>
       )}
 
-      {/* Catalog Grid */}
       {loading.isFetchingGoals ? (
         <div className="flex flex-col items-center py-20">
           <Spinner size="w-12 h-12" color="text-green-500" />
@@ -304,7 +311,6 @@ export default function GoalsManagement() {
         </div>
       )}
 
-      {/* Selection Modal */}
       {assigningDate && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-200">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setAssigningDate(null)} />

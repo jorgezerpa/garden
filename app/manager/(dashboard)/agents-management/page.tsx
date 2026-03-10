@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { addAgent, editAgent, getAgentsList, removeAgent } from '@/apiHandlers/admin';
 import { Spinner } from '@/components/Spinner';
+import { Toast } from '@/components/Toast';
 
 interface Agent {
   id: number;
@@ -17,12 +18,13 @@ const initialLoading = {
   isCreating: false,
   isUpdating: false,
   isDeleting: false,
-  isFetchingAgents: false, // Adapted for Agents context
+  isFetchingAgents: false,
 };
 
 export default function AgentsManagement() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(initialLoading);
+  const [toastError, setToastError] = useState<string | null>(null);
 
   const [expanded, setExpanded] = useState<{ id: number | null; mode: 'details' | 'modify' | null }>({
     id: null,
@@ -39,7 +41,7 @@ export default function AgentsManagement() {
       const response = await getAgentsList(1, 200);
       setAgents(response.data);
     } catch (error) {
-      console.error(error);
+      setToastError("Failed to fetch agents.");
     } finally {
       setLoading((prev) => ({ ...prev, isFetchingAgents: false }));
     }
@@ -49,7 +51,6 @@ export default function AgentsManagement() {
     fetchAgents();
   }, []);
 
-  // --- Handlers ---
   const toggleExpand = (id: number, mode: 'details' | 'modify', agent?: Agent) => {
     if (expanded.id === id && expanded.mode === mode) {
       setExpanded({ id: null, mode: null });
@@ -80,7 +81,7 @@ export default function AgentsManagement() {
       setNewAgent({ name: '', email: '', password: '', leadDeskId: '' });
       setShowAddForm(false);
     } catch (error) {
-      console.error(error);
+      setToastError("Failed to create agent.");
     } finally {
       setLoading((prev) => ({ ...prev, isCreating: false }));
     }
@@ -92,7 +93,7 @@ export default function AgentsManagement() {
       await removeAgent(agentId);
       await fetchAgents();
     } catch (error) {
-      console.error(error);
+      setToastError("Failed to terminate agent.");
     } finally {
       setLoading((prev) => ({ ...prev, isDeleting: false }));
     }
@@ -110,7 +111,7 @@ export default function AgentsManagement() {
       await fetchAgents();
       setExpanded({ id: null, mode: null });
     } catch (error) {
-      console.error(error);
+      setToastError("Failed to update agent details.");
     } finally {
       setLoading((prev) => ({ ...prev, isUpdating: false }));
     }
@@ -118,8 +119,9 @@ export default function AgentsManagement() {
 
   return (
     <div className="space-y-8 pb-20 font-sans">
+      
+      {toastError && <Toast message={toastError} onClose={() => setToastError(null)} />}
 
-      {/* --- ADD AGENT CENTER BUTTON --- */}
       <div className="flex flex-col items-center">
         <button
           onClick={() => setShowAddForm(!showAddForm)}
@@ -134,41 +136,13 @@ export default function AgentsManagement() {
               Register New Team Member
             </h5>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <input
-                type="text"
-                value={newAgent.name}
-                onChange={(e) => setNewAgent({ ...newAgent, name: e.target.value })}
-                placeholder="Full Name"
-                className="w-full bg-slate-50 dark:bg-black/20 dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-bold outline-none"
-              />
-              <input
-                type="email"
-                value={newAgent.email}
-                onChange={(e) => setNewAgent({ ...newAgent, email: e.target.value })}
-                placeholder="Email Address"
-                className="w-full bg-slate-50 dark:bg-black/20 dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-bold outline-none"
-              />
-              <input
-                type="text"
-                value={newAgent.leadDeskId}
-                onChange={(e) => setNewAgent({ ...newAgent, leadDeskId: e.target.value })}
-                placeholder="LeadDesk Id"
-                className="w-full bg-slate-50 dark:bg-black/20 dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-bold outline-none"
-              />
-              <input
-                type="password"
-                value={newAgent.password}
-                onChange={(e) => setNewAgent({ ...newAgent, password: e.target.value })}
-                placeholder="Password"
-                className="w-full bg-slate-50 dark:bg-black/20 dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-bold outline-none"
-              />
+              <input type="text" value={newAgent.name} onChange={(e) => setNewAgent({ ...newAgent, name: e.target.value })} placeholder="Full Name" className="w-full bg-slate-50 dark:bg-black/20 dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-bold outline-none" />
+              <input type="email" value={newAgent.email} onChange={(e) => setNewAgent({ ...newAgent, email: e.target.value })} placeholder="Email Address" className="w-full bg-slate-50 dark:bg-black/20 dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-bold outline-none" />
+              <input type="text" value={newAgent.leadDeskId} onChange={(e) => setNewAgent({ ...newAgent, leadDeskId: e.target.value })} placeholder="LeadDesk Id" className="w-full bg-slate-50 dark:bg-black/20 dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-bold outline-none" />
+              <input type="password" value={newAgent.password} onChange={(e) => setNewAgent({ ...newAgent, password: e.target.value })} placeholder="Password" className="w-full bg-slate-50 dark:bg-black/20 dark:text-gray-200 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-bold outline-none" />
             </div>
             <div className="mt-8 flex justify-center">
-              <button
-                disabled={loading.isCreating}
-                onClick={handleCreation}
-                className="px-10 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-green-500 transition-all flex items-center gap-3 shadow-md"
-              >
+              <button disabled={loading.isCreating} onClick={handleCreation} className="px-10 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-green-500 transition-all flex items-center gap-3 shadow-md">
                 {loading.isCreating ? <><Spinner size="w-3 h-3" color="text-green-500" /> Processing...</> : 'Create Agent'}
               </button>
             </div>
@@ -195,14 +169,9 @@ export default function AgentsManagement() {
                     <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">{agent.user.email}</p>
                   </div>
                 </div>
-
                 <button
                   onClick={() => toggleExpand(agent.id, 'modify', agent)}
-                  className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${
-                    expanded.id === agent.id && expanded.mode === 'modify'
-                      ? 'bg-amber-500 border-amber-500 text-white'
-                      : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300'
-                  }`}
+                  className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${expanded.id === agent.id && expanded.mode === 'modify' ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300'}`}
                 >
                   Modify User
                 </button>
@@ -214,52 +183,21 @@ export default function AgentsManagement() {
                     <div className="space-y-8">
                       <div className="space-y-4">
                         <h5 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Administrative Actions</h5>
-                        <button
-                          disabled={loading.isDeleting}
-                          onClick={() => handleTerminate(agent.id)}
-                          className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 hover:bg-red-500 text-red-600 hover:text-white rounded-xl text-[9px] font-black uppercase transition-all"
-                        >
+                        <button disabled={loading.isDeleting} onClick={() => handleTerminate(agent.id)} className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 hover:bg-red-500 text-red-600 hover:text-white rounded-xl text-[9px] font-black uppercase transition-all">
                           {loading.isDeleting ? <Spinner size="w-3 h-3" /> : 'Terminate'}
                         </button>
                       </div>
-
                       <div className="space-y-4">
                         <h5 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Edit Credentials & IDs</h5>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <input
-                            onChange={(e) => setUpdatingInputs({ ...updatingInputs, name: e.target.value })}
-                            value={updatingInputs.name}
-                            placeholder="Name"
-                            className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none"
-                          />
-                          <input
-                            onChange={(e) => setUpdatingInputs({ ...updatingInputs, email: e.target.value })}
-                            value={updatingInputs.email}
-                            placeholder="Email"
-                            className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none"
-                          />
-                          <input
-                            onChange={(e) => setUpdatingInputs({ ...updatingInputs, leadDeskId: e.target.value })}
-                            value={updatingInputs.leadDeskId}
-                            placeholder="LeadDesk ID"
-                            className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none"
-                          />
-                          <input
-                            onChange={(e) => setUpdatingInputs({ ...updatingInputs, password: e.target.value })}
-                            value={updatingInputs.password}
-                            type="password"
-                            placeholder="New Password"
-                            className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none"
-                          />
+                          <input onChange={(e) => setUpdatingInputs({ ...updatingInputs, name: e.target.value })} value={updatingInputs.name} placeholder="Name" className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none" />
+                          <input onChange={(e) => setUpdatingInputs({ ...updatingInputs, email: e.target.value })} value={updatingInputs.email} placeholder="Email" className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none" />
+                          <input onChange={(e) => setUpdatingInputs({ ...updatingInputs, leadDeskId: e.target.value })} value={updatingInputs.leadDeskId} placeholder="LeadDesk ID" className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none" />
+                          <input onChange={(e) => setUpdatingInputs({ ...updatingInputs, password: e.target.value })} value={updatingInputs.password} type="password" placeholder="New Password" className="bg-white dark:bg-black/40 dark:text-gray-300 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-[11px] font-bold outline-none" />
                         </div>
                       </div>
-
                       <div className="flex justify-end">
-                        <button
-                          disabled={loading.isUpdating}
-                          onClick={() => handleUpdate(agent.id)}
-                          className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[9px] font-black uppercase rounded-xl hover:bg-green-500 transition-all flex items-center gap-2"
-                        >
+                        <button disabled={loading.isUpdating} onClick={() => handleUpdate(agent.id)} className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[9px] font-black uppercase rounded-xl hover:bg-green-500 transition-all flex items-center gap-2">
                           {loading.isUpdating ? <Spinner size="w-3 h-3" /> : 'Save Changes'}
                         </button>
                       </div>
