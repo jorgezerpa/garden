@@ -3,28 +3,19 @@ import { getAgentsComparison } from '@/apiHandlers/dataVis';
 import React, { useState, useEffect } from 'react';
 
 // Extended Mock Data for Comparison
-const initialAgents = [
+const exampleAgents = [
   { id: 1, name: 'Alex Rivera', talkTime: 420, seeds: 45, conversion: 8.4, consistency: 92, longCallRatio: 45 },
-  { id: 2, name: 'Jordan Smith', talkTime: 310, seeds: 28, conversion: 6.2, consistency: 78, longCallRatio: 38 },
-  { id: 3, name: 'Sarah Chen', talkTime: 510, seeds: 62, conversion: 11.5, consistency: 98, longCallRatio: 52 },
-  { id: 4, name: 'Marcus Thorne', talkTime: 180, seeds: 12, conversion: 3.1, consistency: 45, longCallRatio: 22 },
-  { id: 5, name: 'Elena Rodriguez', talkTime: 290, seeds: 31, conversion: 7.2, consistency: 65, longCallRatio: 41 },
-  { id: 6, name: 'David Vance', talkTime: 380, seeds: 40, conversion: 8.1, consistency: 84, longCallRatio: 44 },
-  { id: 7, name: 'Sasha Ivanov', talkTime: 400, seeds: 38, conversion: 7.8, consistency: 88, longCallRatio: 40 },
-  { id: 8, name: 'Liam O’Connor', talkTime: 350, seeds: 33, conversion: 6.9, consistency: 81, longCallRatio: 37 },
-  { id: 9, name: 'Chloe Baptiste', talkTime: 440, seeds: 48, conversion: 9.2, consistency: 90, longCallRatio: 48 },
-  { id: 10, name: 'Musa Abebe', talkTime: 330, seeds: 29, conversion: 7.5, consistency: 80, longCallRatio: 39 },
 ];
 
 type SortConfig = {
-  key: keyof typeof initialAgents[0] | null;
+  key: keyof typeof exampleAgents[0] | null;
   direction: 'asc' | 'desc';
 };
 
 export default function AgentsComparison() {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'talkTime', direction: 'desc' });
   // 1. New state to hold the sorted list
-  const [sortedAgents, setSortedAgents] = useState([...initialAgents]);
+  const [sortedAgents, setSortedAgents] = useState<{ id: number, name: string, talkTime: number, seeds: number, conversion: number, consistency: number, longCallRatio: number }[]>([]);
   const [fromDate, setFromDate] = useState<string>(new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().split('T')[0]); // 1 year ago
   const [toDate, setToDate] = useState<string>(new Date().toISOString().split('T')[0]) 
 
