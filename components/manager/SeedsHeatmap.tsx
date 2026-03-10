@@ -1,10 +1,10 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { getSeedTimelineHeatmap, getSeedTimelineHeatmapPerDay } from '@/apiHandlers/dataVis';
+import { Spinner } from '@/components/Spinner';
 
 const monthLabels = ['Jan', 'Jun', 'Dec'];
 
-// Define the hourly data interface based on your specific response format
 interface HourlyData {
   hour: number;
   intensity: number;
@@ -12,14 +12,13 @@ interface HourlyData {
   label: string;
 }
 
-export function SeedHeatmap({triggerPerAgentSearch, agentsSelected, fromDate, toDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], fromDate: string, toDate: string}) {
+export function SeedHeatmap({ triggerPerAgentSearch, agentsSelected, fromDate, toDate }: { triggerPerAgentSearch: boolean, agentsSelected: number[], fromDate: string, toDate: string }) {
 
   const [selectedDay, setSelectedDay] = useState<any>(null);
   const [data, setData] = useState<{ date: Date, intensity: number, seeds: number }[]>([]);
   const [hourlyData, setHourlyData] = useState<HourlyData[]>([]);
-
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDrilldownLoading, setIsDrilldownLoading] = useState(false);
 
   // Helper to format Date object to YYYY-MM-DD string
   const formatDateToString = (date: Date) => {
@@ -28,8 +27,8 @@ export function SeedHeatmap({triggerPerAgentSearch, agentsSelected, fromDate, to
 
   useEffect(() => {
     (async () => {
+      setIsLoading(true);
       try {
-        // @dev@todo this is not handling the case where from-to are diff years 
         const selectedYear = new Date(fromDate).getFullYear()
         const result = await getSeedTimelineHeatmap(selectedYear, { agents: agentsSelected });
         const formattedResult = result.map((d: any) => {
@@ -42,17 +41,11 @@ export function SeedHeatmap({triggerPerAgentSearch, agentsSelected, fromDate, to
         });
         
         setData(formattedResult);
-        
-        // if (formattedResult.length > 0) {
-        //   const lastDay = formattedResult[formattedResult.length - 1];
-        //   setSelectedDay(lastDay);
-        //   // Fetch initial hourly data for the default selected day
-        //   const dateString = formatDateToString(lastDay.date);
-        //   const hourlyResult = await getSeedTimelineHeatmapPerDay(dateString, { agents: agentsSelected });
-        //   setHourlyData(hourlyResult);
-        // }
       } catch (error) {
+        console.error("Heatmap fetch error:", error);
         setData([]);
+      } finally {
+        setIsLoading(false);
       }
     })();
   }, [fromDate, triggerPerAgentSearch]);
@@ -85,51 +78,46 @@ export function SeedHeatmap({triggerPerAgentSearch, agentsSelected, fromDate, to
             { new Date(fromDate).getFullYear() }
           </span>
         </div>
-        {/* <div className="flex items-center gap-3 bg-slate-50 dark:bg-black/20 p-2 px-4 rounded-2xl border border-slate-200 dark:border-white/10">
-          <div className="flex flex-col">
-            <label className="text-[9px] font-black text-slate-400 uppercase">Selected Year</label>
-            <select 
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="bg-transparent text-xs font-bold focus:outline-none dark:text-white cursor-pointer appearance-none pr-4"
-            >
-              {years.map(year => (
-                <option key={year} value={year} className="dark:bg-[#1e2330]">{year}</option>
-              ))}
-            </select>
-          </div>
-          <div className="text-slate-400 text-[10px]">▼</div>
-        </div> */}
       </div>
 
       {/* --- The Heatmap Grid --- */}
-      <div className="flex-1 overflow-x-auto pb-6 scrollbar-hide">
-        <div className="w-fit min-w-full lg:min-w-0">
-          <div className="inline-grid grid-flow-col grid-rows-7 gap-1.5">
-            {data.map((day, idx) => (
-              <button
-                key={idx}
-                onClick={async () => {
-                  setSelectedDay(day);
-                  try {
-                    const dateString = formatDateToString(day.date);
-                    const result = await getSeedTimelineHeatmapPerDay(dateString, { agents: agentsSelected });
-                    setHourlyData(result);
-                  } catch (error) {
-                    setHourlyData([]);
-                  }
-                }}
-                className={`w-3.5 h-3.5 rounded-sm transition-all duration-200 hover:scale-125 hover:z-10 ${getIntensityClass(day.intensity)} 
-                  ${selectedDay?.date.getTime() === day.date.getTime() ? 'ring-2 ring-green-500 ring-offset-2 dark:ring-offset-[#1e2330]' : ''}`}
-              />
-            ))}
+      <div className="flex-1 overflow-x-auto pb-6 scrollbar-hide min-h-[160px] flex items-center justify-center">
+        {isLoading ? (
+          <div className="flex flex-col items-center gap-4">
+            <Spinner size="w-8 h-8" color="text-green-500" />
+            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-500 animate-pulse">Mapping Yearly Activity...</span>
           </div>
-          <div className="flex justify-between mt-3 text-[9px] font-black uppercase text-slate-400 tracking-widest border-t border-slate-100 dark:border-white/5 pt-2">
-            {monthLabels.map((m, i) => (
-              <span key={i} className="opacity-40 hover:opacity-100 transition-opacity cursor-default px-1">{m}</span>
-            ))}
+        ) : (
+          <div className="w-fit min-w-full lg:min-w-0 animate-in fade-in duration-700">
+            <div className="inline-grid grid-flow-col grid-rows-7 gap-1.5">
+              {data.map((day, idx) => (
+                <button
+                  key={idx}
+                  onClick={async () => {
+                    setSelectedDay(day);
+                    setIsDrilldownLoading(true);
+                    try {
+                      const dateString = formatDateToString(day.date);
+                      const result = await getSeedTimelineHeatmapPerDay(dateString, { agents: agentsSelected });
+                      setHourlyData(result);
+                    } catch (error) {
+                      setHourlyData([]);
+                    } finally {
+                      setIsDrilldownLoading(false);
+                    }
+                  }}
+                  className={`w-3.5 h-3.5 rounded-sm transition-all duration-200 hover:scale-125 hover:z-10 ${getIntensityClass(day.intensity)} 
+                    ${selectedDay?.date.getTime() === day.date.getTime() ? 'ring-2 ring-green-500 ring-offset-2 dark:ring-offset-[#1e2330]' : ''}`}
+                />
+              ))}
+            </div>
+            <div className="flex justify-between mt-3 text-[9px] font-black uppercase text-slate-400 tracking-widest border-t border-slate-100 dark:border-white/5 pt-2">
+              {monthLabels.map((m, i) => (
+                <span key={i} className="opacity-40 hover:opacity-100 transition-opacity cursor-default px-1">{m}</span>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* --- Footer / Legend & Hourly Drill-down --- */}
@@ -141,7 +129,13 @@ export function SeedHeatmap({triggerPerAgentSearch, agentsSelected, fromDate, to
         </div>
 
         {selectedDay && (
-          <div className="bg-slate-50 dark:bg-black/40 p-5 rounded-3xl border border-slate-100 dark:border-white/5 flex flex-col gap-4 min-w-[320px] animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-slate-50 dark:bg-black/40 p-5 rounded-3xl border border-slate-100 dark:border-white/5 flex flex-col gap-4 min-w-[320px] animate-in fade-in slide-in-from-bottom-4 duration-500 relative overflow-hidden">
+            {isDrilldownLoading && (
+              <div className="absolute inset-0 bg-white/50 dark:bg-[#1e2330]/80 backdrop-blur-[2px] z-20 flex items-center justify-center">
+                 <Spinner size="w-6 h-6" color="text-green-500" />
+              </div>
+            )}
+
             <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-3">
               <div className="flex flex-col">
                 <span className="text-[8px] font-black uppercase text-slate-400">Activity for</span>
@@ -168,7 +162,6 @@ export function SeedHeatmap({triggerPerAgentSearch, agentsSelected, fromDate, to
                     />
                   ))
                 ) : (
-                  // Skeleton state while fetching
                   Array.from({ length: 24 }).map((_, i) => (
                     <div key={i} className="h-4 bg-slate-200 dark:bg-white/5 rounded-sm animate-pulse" />
                   ))

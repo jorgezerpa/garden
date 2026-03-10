@@ -1,24 +1,41 @@
 'use client';
 import { getAgentsComparison } from '@/apiHandlers/dataVis';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Spinner } from '@/components/Spinner';
 
-// Extended Mock Data for Comparison
-const exampleAgents = [
-  { id: 1, name: 'Alex Rivera', talkTime: 420, seeds: 45, conversion: 8.4, consistency: 92, longCallRatio: 45 },
-];
+// Initial state as requested
+const initialLoading = {
+  isFetchingTable: false,
+};
 
 type SortConfig = {
-  key: keyof typeof exampleAgents[0] | null;
+  key: 'talkTime' | 'seeds' | 'conversion' | 'consistency' | 'longCallRatio' | null;
   direction: 'asc' | 'desc';
 };
 
 export default function AgentsComparison() {
+  const [loading, setLoading] = useState(initialLoading);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'talkTime', direction: 'desc' });
-  // 1. New state to hold the sorted list
   const [sortedAgents, setSortedAgents] = useState<{ id: number, name: string, talkTime: number, seeds: number, conversion: number, consistency: number, longCallRatio: number }[]>([]);
-  const [fromDate, setFromDate] = useState<string>(new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().split('T')[0]); // 1 year ago
-  const [toDate, setToDate] = useState<string>(new Date().toISOString().split('T')[0]) 
+  const [fromDate, setFromDate] = useState<string>(new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().split('T')[0]);
+  const [toDate, setToDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
+  // Abstracted fetch logic to handle the loading state centrally
+  const fetchComparison = useCallback(async () => {
+    setLoading({ isFetchingTable: true });
+    try {
+      const response = await getAgentsComparison(fromDate, toDate, { sortConfig, agents: [] });
+      setSortedAgents(response);
+    } catch (error) {
+      console.error("Failed to fetch comparison data:", error);
+    } finally {
+      setLoading({ isFetchingTable: false });
+    }
+  }, [fromDate, toDate, sortConfig]);
+
+  useEffect(() => {
+    fetchComparison();
+  }, [fetchComparison]);
 
   const requestSort = (key: SortConfig['key']) => {
     let direction: 'asc' | 'desc' = 'desc';
@@ -33,15 +50,8 @@ export default function AgentsComparison() {
     return sortConfig.direction === 'desc' ? ' ↓' : ' ↑';
   };
 
-  useEffect(()=>{
-    (async()=>{
-      const response = await getAgentsComparison(fromDate, toDate, { sortConfig, agents:[] })
-      setSortedAgents(response)
-    })()
-  }, [sortConfig, fromDate, toDate])
-
   return (
-    <div className="space-y-8 animate-in fade-in duration-700 p-4">
+    <div className="space-y-8 animate-in fade-in duration-700 p-4 font-sans">
       {/* Header */}
       <div>
         <h2 className="text-xl font-black uppercase tracking-tight text-slate-800 dark:text-white">
@@ -52,7 +62,8 @@ export default function AgentsComparison() {
         </p>
       </div>
 
-      <div className="flex items-center gap-3 bg-slate-50 dark:bg-black/20 p-2 rounded-2xl border border-slate-200 dark:border-white/10 ">
+      {/* Date Filters */}
+      <div className="flex items-center gap-3 bg-slate-50 dark:bg-black/20 p-2 rounded-2xl border border-slate-200 dark:border-white/10 w-fit">
         <div className="flex flex-col px-2">
           <label className="text-[9px] font-black text-slate-400 uppercase">From</label>
           <input 
@@ -75,7 +86,7 @@ export default function AgentsComparison() {
       </div>
 
       {/* Table Container */}
-      <div className="bg-white dark:bg-[#1e2330] rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-[#1e2330] rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden min-h-[400px]">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -101,49 +112,60 @@ export default function AgentsComparison() {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-              {sortedAgents.map((agent, index) => (
-                <tr key={agent.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group">
-                  <td className="p-6">
-                    <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-black text-slate-300 w-4">#{index + 1}</span>
-                      <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center text-[11px] font-black text-green-500">
-                        {agent.name.split(' ').map(n => n[0]).join('')}
-                      </div>
-                      <span className="text-xs font-bold dark:text-slate-200">{agent.name}</span>
+            <tbody className="divide-y divide-slate-100 dark:divide-white/5 relative">
+              {loading.isFetchingTable ? (
+                <tr>
+                  <td colSpan={6} className="p-20 text-center">
+                    <div className="flex flex-col items-center justify-center gap-4">
+                      <Spinner size="w-10 h-10" color="text-green-500" />
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recalculating Ranks...</p>
                     </div>
-                  </td>
-                  <td className="p-6 text-xs font-bold dark:text-white">{agent.talkTime}m</td>
-                  <td className="p-6 text-xs font-bold dark:text-white">{agent.seeds}</td>
-                  <td className="p-6">
-                    <span className={`text-xs font-black ${agent.conversion > 8 ? 'text-green-500' : 'text-slate-400'}`}>
-                      {agent.conversion}%
-                    </span>
-                  </td>
-                  <td className="p-6">
-                    <div className="flex items-center gap-2">
-                       <div className="w-12 h-1.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-green-500 rounded-full" 
-                            style={{ width: `${agent.consistency}%` }}
-                          />
-                       </div>
-                       <span className="text-[10px] font-black dark:text-slate-400">{agent.consistency}</span>
-                    </div>
-                  </td>
-                  <td className="p-6">
-                     <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-white/5 text-[10px] font-black dark:text-slate-300">
-                      {agent.longCallRatio}%
-                     </span>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                sortedAgents.map((agent, index) => (
+                  <tr key={agent.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group">
+                    <td className="p-6">
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-black text-slate-300 w-4">#{index + 1}</span>
+                        <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center text-[11px] font-black text-green-500">
+                          {agent.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <span className="text-xs font-bold dark:text-slate-200">{agent.name}</span>
+                      </div>
+                    </td>
+                    <td className="p-6 text-xs font-bold dark:text-white">{agent.talkTime}m</td>
+                    <td className="p-6 text-xs font-bold dark:text-white">{agent.seeds}</td>
+                    <td className="p-6">
+                      <span className={`text-xs font-black ${agent.conversion > 8 ? 'text-green-500' : 'text-slate-400'}`}>
+                        {agent.conversion}%
+                      </span>
+                    </td>
+                    <td className="p-6">
+                      <div className="flex items-center gap-2">
+                         <div className="w-12 h-1.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-green-500 rounded-full" 
+                              style={{ width: `${agent.consistency}%` }}
+                            />
+                         </div>
+                         <span className="text-[10px] font-black dark:text-slate-400">{agent.consistency}</span>
+                      </div>
+                    </td>
+                    <td className="p-6">
+                       <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-white/5 text-[10px] font-black dark:text-slate-300">
+                        {agent.longCallRatio}%
+                       </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Footer */}
+      {/* Footer Insight */}
       <div className="flex gap-4 p-6 bg-green-500/5 rounded-3xl border border-green-500/10">
         <div className="w-10 h-10 rounded-2xl bg-green-500 flex items-center justify-center text-white shrink-0">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

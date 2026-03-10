@@ -9,99 +9,143 @@ import {
   upsertSchemaAssignation, 
   deleteSchemaAssignationById 
 } from '@/apiHandlers/schema';
-import { BlockType, CreateSchemaData, Schema, SchemaBlock } from '@/types/BlockSchemas';
+import { CreateSchemaData, Schema, SchemaBlock } from '@/types/BlockSchemas';
+import { Spinner } from '@/components/Spinner';
 
-// Helper to convert minutes to HH:MM string
 const formatTime = (minutes: number) => {
   const h = Math.floor(minutes / 60).toString().padStart(2, '0');
   const m = (minutes % 60).toString().padStart(2, '0');
   return `${h}:${m}`;
 };
 
-// Helper to convert HH:MM string to minutes
 const parseTime = (timeStr: string) => {
   if (!timeStr) return 0;
   const [h, m] = timeStr.split(':').map(Number);
   return (h * 60) + m;
 };
 
-// UI Config for Block Types
 const BLOCK_STYLES: Record<string, { label: string, color: string }> = {
   ["WORKING"]: { label: 'Working', color: 'bg-blue-500 text-blue-500 border-blue-500/30 dark:border-blue-500/50' },
   ["REST"]: { label: 'Rest', color: 'bg-slate-400 text-slate-500 border-slate-300 dark:border-slate-600 dark:text-slate-400' },
   ["EXTRA_TIME"]: { label: 'Extra Time', color: 'bg-amber-500 text-amber-600 border-amber-500/30 dark:border-amber-500/50 dark:text-amber-500' },
 };
 
+const initialLoading = {
+  isFetchingBlockSchemas: false,
+  isFetchingAssignations: false,
+  isCreatingBlockSchema: false,
+  isEditingBlockSchema: null as number | null, // Stores Schema ID
+  isDeletingBlockSchema: null as number | null, // Stores Schema ID
+  isAssigningBlockSchema: null as string | null, // Stores Date String
+  isUnassigningBlockSchema: null as number | null, // Stores Assignation ID
+};
+
 export default function BlocksManagement() {
-  // --- States ---
   const [schemas, setSchemas] = useState<Schema[]>([]);
   const [assignations, setAssignations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(initialLoading);
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   
   const [assigningDate, setAssigningDate] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingSchemaId, setEditingSchemaId] = useState<number | null>(null);
 
-  // Form State
   const [schemaName, setSchemaName] = useState("");
   const [blocksForm, setBlocksForm] = useState<any[]>([]);
 
   useEffect(() => {
     fetchSchemas();
+  }, []);
+
+  useEffect(() => {
     fetchWeekAssignations(selectedDate);
   }, [selectedDate]);
 
   const fetchSchemas = async () => {
+    setLoading(prev => ({ ...prev, isFetchingBlockSchemas: true }));
     try {
-      const data = await getSchemasList(1, 50); // Assuming pagination support
-      // Normalize data in case endpoint returns { data: [] } vs []
+      const data = await getSchemasList(1, 50);
       const list = Array.isArray(data) ? data : (data?.data || []);
       setSchemas(list);
     } catch (error) { console.error(error); }
-  };
-
-
-  const formatDate = (d: Date) => {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const dayOfMonth = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${dayOfMonth}`;
+    finally { setLoading(prev => ({ ...prev, isFetchingBlockSchemas: false })); }
   };
 
   const fetchWeekAssignations = async (baseDate: string) => {
+    setLoading(prev => ({ ...prev, isFetchingAssignations: true }));
     const date = new Date(baseDate);
     const day = date.getDay();
     const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    
     const monday = new Date(date.setDate(diff));
     const sunday = new Date(date.setDate(diff + 6));
 
     try {
       const data = await getSchemaAssignations(
-        formatDate(monday), 
-        formatDate(sunday)
+        monday.toISOString().split('T')[0], 
+        sunday.toISOString().split('T')[0]
       );
-
       setAssignations(Array.isArray(data) ? data : []);
-    } catch (error) { 
-      console.error(error); 
-  }
-};
+    } catch (error) { console.error(error); }
+    finally { setLoading(prev => ({ ...prev, isFetchingAssignations: false })); }
+  };
 
-  // --- Handlers ---
   const handleAssign = async (date: string, schemaId: number) => {
     if (!schemaId) return;
+    setLoading(prev => ({ ...prev, isAssigningBlockSchema: date }));
     try {
       await upsertSchemaAssignation(date, schemaId);
-      fetchWeekAssignations(selectedDate);
+      await fetchWeekAssignations(selectedDate);
     } catch (error) { console.error(error); }
+    finally { setLoading(prev => ({ ...prev, isAssigningBlockSchema: null })); }
   };
 
   const handleUnassign = async (assignationId: number) => {
+    setLoading(prev => ({ ...prev, isUnassigningBlockSchema: assignationId }));
     try {
       await deleteSchemaAssignationById(assignationId);
+      await fetchWeekAssignations(selectedDate);
+    } catch (error) { console.error(error); }
+    finally { setLoading(prev => ({ ...prev, isUnassigningBlockSchema: null })); }
+  };
+
+  const handleDeleteSchema = async (id: number) => {
+    if (!confirm("Delete this schema? This action cannot be undone.")) return;
+    setLoading(prev => ({ ...prev, isDeletingBlockSchema: id }));
+    try {
+      await deleteSchema(id);
+      await fetchSchemas();
       fetchWeekAssignations(selectedDate);
     } catch (error) { console.error(error); }
+    finally { setLoading(prev => ({ ...prev, isDeletingBlockSchema: null })); }
+  };
+
+  const handleSaveSchema = async () => {
+    if (!schemaName.trim()) return alert("Schema name is required");
+    const formattedBlocks = blocksForm.map((b) => ({
+      name: b.name || null,
+      startMinutesFromMidnight: parseTime(b.startTime),
+      endMinutesFromMidnight: parseTime(b.endTime),
+      blockType: b.blockType,
+    })) as SchemaBlock[];
+
+    if (editingSchemaId) {
+      setLoading(prev => ({ ...prev, isEditingBlockSchema: editingSchemaId }));
+    } else {
+      setLoading(prev => ({ ...prev, isCreatingBlockSchema: true }));
+    }
+
+    try {
+      if (editingSchemaId) {
+        await updateSchema(editingSchemaId, { name: schemaName, blocks: formattedBlocks });
+      } else {
+        await createSchema({ name: schemaName, blocks: formattedBlocks });
+      }
+      setShowModal(false);
+      await fetchSchemas();
+    } catch (error) { console.error(error); }
+    finally {
+      setLoading(prev => ({ ...prev, isEditingBlockSchema: null, isCreatingBlockSchema: false }));
+    }
   };
 
   const getWeekDates = () => {
@@ -114,16 +158,6 @@ export default function BlocksManagement() {
       d.setDate(monday.getDate() + i);
       return d;
     });
-  };
-
-  // Schema Handlers
-  const handleDeleteSchema = async (id: number) => {
-    if (!confirm("Delete this schema? This action cannot be undone.")) return;
-    try {
-      await deleteSchema(id);
-      fetchSchemas();
-      fetchWeekAssignations(selectedDate)
-    } catch (error) { console.error(error); }
   };
 
   const openCreateModal = () => {
@@ -144,42 +178,13 @@ export default function BlocksManagement() {
     setShowModal(true);
   };
 
-  const handleSaveSchema = async () => {
-    if (!schemaName.trim()) return alert("Schema name is required");
-    
-    const formattedBlocks = blocksForm.map((b) => ({
-      name: b.name || null,
-      startMinutesFromMidnight: parseTime(b.startTime),
-      endMinutesFromMidnight: parseTime(b.endTime),
-      blockType: b.blockType,
-    })) as SchemaBlock[];
-    try {
-      if (editingSchemaId) {
-        // Based on the provided type, the update payload uses 'block' instead of 'blocks'
-        await updateSchema(editingSchemaId, { name: schemaName, blocks: formattedBlocks });
-      } else {
-        const newSchema: CreateSchemaData = { name: schemaName, blocks: formattedBlocks };
-        await createSchema(newSchema);
-      }
-      setShowModal(false);
-      fetchSchemas();
-    } catch (error) { console.error(error); }
-  };
-
-  const addBlockRow = () => {
-    setBlocksForm([...blocksForm, { id: Date.now(), name: "", startTime: "08:00", endTime: "09:00", blockType: "WORKING" }]);
-  };
-
-  const removeBlockRow = (index: number) => {
-    setBlocksForm(blocksForm.filter((_, i) => i !== index));
-  };
-
+  const addBlockRow = () => setBlocksForm([...blocksForm, { id: Date.now(), name: "", startTime: "08:00", endTime: "09:00", blockType: "WORKING" }]);
+  const removeBlockRow = (index: number) => setBlocksForm(blocksForm.filter((_, i) => i !== index));
   const updateBlockRow = (index: number, field: string, value: any) => {
     const updated = [...blocksForm];
     updated[index][field] = value;
     setBlocksForm(updated);
   };
-
 
   return (
     <div className="space-y-8 pb-20 font-sans">
@@ -201,150 +206,131 @@ export default function BlocksManagement() {
       <section className="bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-[2.5rem] p-8">
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
           <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Weekly Schema Schedule</h3>
-          <div className="relative">
-            <input 
-              type="date" 
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-white dark:bg-[#1e2330] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white shadow-sm"
-            />
-          </div>
+          <input 
+            type="date" 
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="bg-white dark:bg-[#1e2330] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-xs font-bold outline-none dark:text-white shadow-sm"
+          />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-4 lg:grid-cols-7 gap-4">
-          {getWeekDates().map((date, i) => {
-            const dateStr = [
-              date.getFullYear(),
-              String(date.getMonth() + 1).padStart(2, '0'),
-              String(date.getDate()).padStart(2, '0')
-            ].join('-');
-            
-            const assignation = assignations.find(a => a.date?.toString().split('T')[0] === dateStr);
-            const assignedSchema = schemas.find(s => s.id === assignation?.schemaId);
+        {loading.isFetchingAssignations ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Spinner size="w-8 h-8" color="text-indigo-500" />
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-4">Fetching Week Plan...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-4 lg:grid-cols-7 gap-4">
+            {getWeekDates().map((date) => {
+              const dateStr = date.toISOString().split('T')[0];
+              const assignation = assignations.find(a => a.date?.toString().split('T')[0] === dateStr);
+              const assignedSchema = schemas.find(s => s.id === assignation?.schemaId);
+              const isUnassigning = loading.isUnassigningBlockSchema === assignation?.id;
+              const isAssigning = loading.isAssigningBlockSchema === dateStr;
 
+              return (
+                <div key={dateStr} className="group relative bg-white dark:bg-[#1a1f2b] p-5 rounded-[2.2rem] border-2 border-transparent hover:border-indigo-500/20 transition-all flex flex-col items-center min-h-[160px] shadow-sm">
+                  <div className="text-center mb-6">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                      {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                    </p>
+                    <p className="text-sm font-black dark:text-white">
+                      {date.getDate()} <span className="opacity-20">/</span> {date.getMonth() + 1}
+                    </p>
+                  </div>
+
+                  {assignation ? (
+                    <div className="w-full mt-auto">
+                      <div className="bg-indigo-500 shadow-lg py-3 px-2 rounded-2xl mb-3">
+                        <p className="text-[10px] font-black uppercase text-white text-center truncate">
+                          {assignedSchema?.name || 'Active Schema'}
+                        </p>
+                      </div>
+                      <button 
+                        disabled={isUnassigning}
+                        onClick={() => handleUnassign(assignation.id)}
+                        className="w-full text-[9px] font-black uppercase text-slate-400 hover:text-red-500 transition-colors flex justify-center items-center gap-2"
+                      >
+                        {isUnassigning ? <Spinner size="w-3 h-3" /> : 'Unassign'}
+                      </button>
+                    </div>
+                  ) : (
+                    <button 
+                      disabled={isAssigning}
+                      onClick={() => setAssigningDate(dateStr)}
+                      className="w-full mt-auto py-4 border-2 border-dashed border-slate-100 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center transition-all group-hover:bg-indigo-500/5"
+                    >
+                      {isAssigning ? <Spinner size="w-4 h-4" color="text-indigo-500" /> : <span className="text-[10px] font-black uppercase text-slate-300 group-hover:text-indigo-500">+ Assign</span>}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Schemas List */}
+      {loading.isFetchingBlockSchemas ? (
+        <div className="flex flex-col items-center py-20">
+          <Spinner size="w-12 h-12" color="text-indigo-500" />
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-4">Loading Schemas...</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6">
+          {schemas.map((schema) => {
+            const isDeleting = loading.isDeletingBlockSchema === schema.id;
             return (
-              <div key={dateStr} className="group relative bg-white dark:bg-[#1a1f2b] p-5 rounded-[2.2rem] border-2 border-transparent hover:border-indigo-500/20 transition-all flex flex-col items-center min-h-[160px] shadow-sm">
-                
-                {/* Date Display */}
-                <div className="text-center mb-6">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
-                    {date.toLocaleDateString('en-US', { weekday: 'short' })}
-                  </p>
-                  <p className="text-sm font-black dark:text-white">
-                    {date.getDate()} <span className="opacity-20">/</span> {date.getMonth() + 1}
-                  </p>
+              <div key={schema.id} className="relative bg-white dark:bg-[#1e2330] rounded-[2rem] border border-slate-200 dark:border-white/10 p-6 sm:p-8 shadow-sm hover:shadow-md transition-all group">
+                <div className="absolute top-6 right-6 flex items-center gap-2">
+                  <button onClick={() => openEditModal(schema)} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-500 transition-colors px-3 py-1 bg-slate-50 dark:bg-black/20 rounded-lg">
+                    Edit
+                  </button>
+                  <button 
+                    disabled={isDeleting}
+                    onClick={() => handleDeleteSchema(schema.id)} 
+                    className="text-slate-300 hover:text-red-500 transition-colors p-2 bg-slate-50 dark:bg-black/20 rounded-lg flex items-center justify-center"
+                  >
+                    {isDeleting ? <Spinner size="w-4 h-4" color="text-red-500" /> : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>}
+                  </button>
                 </div>
 
-                {assignation ? (
-                  <div className="w-full mt-auto animate-in fade-in zoom-in duration-300">
-                    <div className="bg-indigo-500 shadow-[0_10px_20px_-5px_rgba(99,102,241,0.3)] py-3 px-2 rounded-2xl mb-3">
-                      <p className="text-[10px] font-black uppercase text-white text-center truncate">
-                        {assignedSchema?.name || 'Active Schema'}
-                      </p>
-                    </div>
-                    <button 
-                      onClick={() => handleUnassign(assignation.id)}
-                      className="w-full text-[9px] font-black uppercase text-slate-400 hover:text-red-500 transition-colors tracking-widest"
-                    >
-                      Unassign
-                    </button>
-                  </div>
-                ) : (
-                  <button 
-                    onClick={() => setAssigningDate(dateStr)}
-                    className="w-full mt-auto py-4 border-2 border-dashed border-slate-100 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center group-hover:border-indigo-500/30 group-hover:bg-indigo-500/5 transition-all"
-                  >
-                    <span className="text-[10px] font-black uppercase text-slate-300 group-hover:text-indigo-500">+ Assign</span>
-                  </button>
-                )}
+                <h4 className="text-lg font-black dark:text-white uppercase tracking-tight mb-6 pr-32">{schema.name}</h4>
+
+                <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+                  {schema.blocks?.sort((a,b) => a.startMinutesFromMidnight - b.startMinutesFromMidnight).map((block, idx) => {
+                    const style = BLOCK_STYLES[block.blockType] || BLOCK_STYLES["WORKING"];
+                    return (
+                      <div key={idx} className={`flex flex-col justify-center px-4 py-3 rounded-2xl border ${style.color} bg-opacity-10 dark:bg-opacity-5`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className={`w-2 h-2 rounded-full ${style.color.split(' ')[0]}`} />
+                          <span className="text-[9px] font-black uppercase tracking-widest opacity-80">{style.label}</span>
+                        </div>
+                        <p className="text-sm font-bold dark:text-white">
+                          {formatTime(block.startMinutesFromMidnight)} - {formatTime(block.endMinutesFromMidnight)}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}
         </div>
-      </section>
+      )}
 
-      {/* Schemas List (1-Column Grid) */}
-      <div className="grid grid-cols-1 gap-6">
-        {schemas.map((schema) => (
-          <div key={schema.id} className="relative bg-white dark:bg-[#1e2330] rounded-[2rem] border border-slate-200 dark:border-white/10 p-6 sm:p-8 shadow-sm hover:shadow-md transition-all group">
-            
-            {/* Top right actions */}
-            <div className="absolute top-6 right-6 flex items-center gap-2">
-              <button onClick={() => openEditModal(schema)} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-500 transition-colors px-3 py-1 bg-slate-50 dark:bg-black/20 rounded-lg">
-                Edit
-              </button>
-              <button onClick={() => handleDeleteSchema(schema.id)} className="text-slate-300 hover:text-red-500 transition-colors p-2 bg-slate-50 dark:bg-black/20 rounded-lg">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-
-            {/* Schema Header */}
-            <h4 className="text-lg font-black dark:text-white uppercase tracking-tight mb-6 pr-32">{schema.name}</h4>
-
-            {/* Blocks Visualizer */}
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3">
-              {schema.blocks?.sort((a,b) => a.startMinutesFromMidnight - b.startMinutesFromMidnight).map((block, idx) => {
-                const style = BLOCK_STYLES[block.blockType] || BLOCK_STYLES["WORKING"];
-                return (
-                  <div key={idx} className={`flex flex-col justify-center px-4 py-3 rounded-2xl border ${style.color} bg-opacity-10 dark:bg-opacity-5`}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className={`w-2 h-2 rounded-full ${style.color.split(' ')[0]}`} />
-                      <span className="text-[9px] font-black uppercase tracking-widest opacity-80">
-                        {style.label}
-                      </span>
-                    </div>
-                    <p className="text-sm font-bold dark:text-white">
-                      {formatTime(block.startMinutesFromMidnight)} - {formatTime(block.endMinutesFromMidnight)}
-                    </p>
-                    {block.name && (
-                      <span className="text-[10px] font-semibold mt-1 opacity-70 truncate max-w-[120px]">
-                        {block.name}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-              {(!schema.blocks || schema.blocks.length === 0) && (
-                <p className="text-xs font-bold text-slate-400 italic">No blocks defined.</p>
-              )}
-            </div>
-          </div>
-        ))}
-        {schemas.length === 0 && (
-          <div className="text-center py-12 bg-white dark:bg-[#1e2330] rounded-[2rem] border border-dashed border-slate-300 dark:border-white/10">
-            <p className="text-sm font-black text-slate-400 uppercase tracking-widest">No schemas available</p>
-          </div>
-        )}
-      </div>
-
-      {/* Create/Edit Schema Modal */}
+      {/* Modal logic for Create/Edit stays similar but with button loaders */}
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setShowModal(false)} />
-          
-          <div className="relative bg-white dark:bg-[#1e2330] w-full max-w-4xl max-h-[90vh] overflow-y-auto custom-scrollbar rounded-[2.5rem] p-6 sm:p-10 shadow-2xl border border-white/10 flex flex-col">
+          <div className="relative bg-white dark:bg-[#1e2330] w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-6 sm:p-10 shadow-2xl border border-white/10 flex flex-col">
+            <h2 className="text-xl font-black dark:text-white mb-8">{editingSchemaId ? 'Edit Schema' : 'Create New Schema'}</h2>
             
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h5 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-1">Schema Configuration</h5>
-                <h2 className="text-xl font-black dark:text-white">{editingSchemaId ? 'Edit Schema' : 'Create New Schema'}</h2>
-              </div>
-              <button onClick={() => setShowModal(false)} className="p-3 bg-slate-100 dark:bg-white/5 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition-colors">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-
-            {/* Schema Name Input */}
-            <div className="space-y-2 mb-8">
-              <label className="text-[9px] font-black text-slate-400 uppercase ml-2 tracking-widest">Schema Name</label>
-              <input 
-                type="text" 
-                value={schemaName}
-                onChange={(e) => setSchemaName(e.target.value)}
-                placeholder="e.g. Standard Weekday Shift" 
-                className="w-full bg-slate-50 dark:bg-black/20 dark:text-white border border-slate-200 dark:border-white/10 rounded-xl px-5 py-4 text-sm font-bold outline-none focus:border-indigo-500 transition-colors" 
-              />
-            </div>
+            <input 
+              type="text" value={schemaName} onChange={(e) => setSchemaName(e.target.value)}
+              className="w-full bg-slate-50 dark:bg-black/20 dark:text-white border border-slate-200 rounded-xl px-5 py-4 text-sm font-bold outline-none focus:border-indigo-500 mb-8" 
+              placeholder="Schema Name"
+            />
 
             {/* Blocks Rows */}
             <div className="space-y-4 mb-8 flex-1">
@@ -414,16 +400,16 @@ export default function BlocksManagement() {
               )}
             </div>
 
-            {/* Actions */}
-            <div className="mt-auto pt-6 border-t border-slate-100 dark:border-white/10 flex justify-end gap-3">
-              <button onClick={() => setShowModal(false)} className="px-8 py-4 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-300 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-all">
-                Cancel
-              </button>
-              <button onClick={handleSaveSchema} disabled={blocksForm.length === 0} className="px-10 py-4 bg-indigo-500 disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-600 transition-all shadow-[0_10px_20px_-5px_rgba(99,102,241,0.4)]">
-                Save Schema
+            <div className="mt-auto pt-6 border-t flex justify-end gap-3">
+              <button onClick={() => setShowModal(false)} className="px-8 py-4 bg-slate-100 text-[10px] font-black uppercase rounded-xl">Cancel</button>
+              <button 
+                disabled={loading.isCreatingBlockSchema || loading.isEditingBlockSchema !== null}
+                onClick={handleSaveSchema} 
+                className="px-10 py-4 bg-indigo-500 text-white text-[10px] font-black uppercase rounded-xl flex items-center gap-3"
+              >
+                {(loading.isCreatingBlockSchema || loading.isEditingBlockSchema) ? <Spinner size="w-3 h-3" /> : 'Save Schema'}
               </button>
             </div>
-
           </div>
         </div>
       )}
@@ -432,44 +418,22 @@ export default function BlocksManagement() {
       {assigningDate && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-200">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setAssigningDate(null)} />
-          
-          <div className="relative bg-white dark:bg-[#1e2330] w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl border border-white/10">
-            <div className="mb-6">
-              <h3 className="text-xl font-black dark:text-white">Select a Schema</h3>
-              <p className="text-[10px] font-black uppercase text-indigo-500 tracking-widest mt-1">
-                Assigning for {new Date(assigningDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
-              </p>
-            </div>
-
-            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="relative bg-white dark:bg-[#1e2330] w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl">
+            <h3 className="text-xl font-black dark:text-white">Select a Schema</h3>
+            <div className="space-y-3 mt-6">
               {schemas.map((schema) => (
                 <button
                   key={schema.id}
-                  onClick={() => {
-                    handleAssign(assigningDate, schema.id as number);
-                    setAssigningDate(null);
-                  }}
-                  className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-black/20 border border-transparent hover:border-indigo-500 hover:bg-indigo-500/5 transition-all group"
+                  onClick={() => { handleAssign(assigningDate, schema.id as number); setAssigningDate(null); }}
+                  className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-black/20 border border-transparent hover:border-indigo-500 transition-all group"
                 >
                   <span className="text-sm font-bold dark:text-slate-200 group-hover:text-indigo-500">{schema.name}</span>
-                  <div className="h-6 w-6 rounded-full bg-slate-200 dark:bg-white/5 flex items-center justify-center group-hover:bg-indigo-500 transition-colors">
-                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" />
-                    </svg>
+                  <div className="h-6 w-6 rounded-full bg-slate-200 dark:bg-white/5 flex items-center justify-center group-hover:bg-indigo-50 transition-colors">
+                    <svg className="w-3 h-3 text-white group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>
                   </div>
                 </button>
               ))}
-              {schemas.length === 0 && (
-                <p className="text-xs font-bold text-slate-400 text-center py-4">No schemas available to assign.</p>
-              )}
             </div>
-
-            <button 
-              onClick={() => setAssigningDate(null)}
-              className="mt-8 w-full py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
-            >
-              Cancel
-            </button>
           </div>
         </div>
       )}

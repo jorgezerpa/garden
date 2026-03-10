@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { DailyActivityLineCharts } from '@/components/manager/DailyActivityLineChart';
 import { PerBlockBarChart } from '@/components/manager/PerBlockBarChart';
 import { CallDurationHistogram } from '@/components/manager/CallsDurationHistogram';
@@ -7,14 +7,13 @@ import { SeedHeatmap } from '@/components/manager/SeedsHeatmap';
 import { ConversionFunnelChart } from '@/components/manager/ConversionFunnelChart';
 import { ConsistencyGraph } from '@/components/manager/ConsistencyGraph';
 import { getAgentsList } from '@/apiHandlers/admin';
-import { getDailyActivity, getBlockPerformance, getLongCallDistribution, getSeedTimelineHeatmap, getConversionFunnel, getConsistencyStreak, getGeneralInsights, getLastCallDate } from '@/apiHandlers/dataVis';
+import { getLastCallDate } from '@/apiHandlers/dataVis';
 import { GeneralInsights } from '@/components/manager/GeneralInsights';
-
+import { Spinner } from '@/components/Spinner';
 
 export default function AdminStats() {
   const [mounted, setMounted] = useState(false);
   const [viewMode, setViewMode] = useState<'group' | 'user'>('group');
-  // const [timeRange, setTimeRange] = useState('Last 7 Days');
   const [searchQuery, setSearchQuery] = useState('');
   //
   const [agents, setAgents] = useState<{ id: number, name: string, email:string}[]>([])
@@ -25,14 +24,23 @@ export default function AdminStats() {
 
   const [fromDate, setFromDate] = useState<string|null>(null)
   const [toDate, setToDate] = useState<string|null>(null)
+  const [fetchingAgents, setFetchingAgents] = useState<boolean>(false)
 
   useEffect(() => setMounted(true), []);
   
   useEffect(()=>{
     (async()=>{
       if(viewMode=="user") {
-        const response = await getAgentsList(1,200)
-        setAgents(response.data || [])
+        try {
+          setFetchingAgents(true)
+          const response = await getAgentsList(1,200)
+          setAgents(response.data || [])
+        } catch (error) {
+          
+        }
+        finally {
+          setFetchingAgents(false)
+        }
       }
     })()
   }, [viewMode])
@@ -120,21 +128,6 @@ export default function AdminStats() {
             ))}
           </div>
 
-
-          {/* Time Range Selector */}
-          {/* <div className="flex gap-2">
-            {['Today', 'Last 7 Days', 'Last 30 Days'].map((range) => (
-              <button
-                key={range}
-                onClick={() => setTimeRange(range)}
-                className={`px-3 py-2 rounded-xl text-[9px] font-bold uppercase tracking-wider transition-all ${
-                  timeRange === range ? 'text-green-500 border border-green-500/30 bg-green-500/5' : 'text-slate-400 border border-transparent'
-                }`}
-              >
-                {range}
-              </button>
-            ))}
-          </div> */}
           <div className="flex items-center gap-3 bg-slate-50 dark:bg-black/20 p-2 rounded-2xl border border-slate-200 dark:border-white/10 ">
             <div className="flex flex-col px-2">
               <label className="text-[9px] font-black text-slate-400 uppercase">From</label>
@@ -178,27 +171,39 @@ export default function AdminStats() {
             <p onClick={agentsSelected.length>0 ? handleClearAgentSelection : ()=>{}} className={`${agentsSelected.length==0 ? "opacity-35 cursor-not-allowed" : "cursor-pointer"} text-sm text-gray-800 dark:text-green-500 tracking-widest font-bold`}>Clear search</p>
           </div>
 
-          <div className="bg-slate-200/30 dark:bg-black/20 rounded-[2.5rem] p-6 border border-slate-200 dark:border-white/5">
-            <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide snap-x">
-              <div className="grid grid-rows-3 grid-flow-col gap-4">
-                {agents.filter(u => u.name.toLowerCase().includes(searchQuery.toLowerCase())).map((user) => (
-                  <div key={user.id} className="w-64 snap-start bg-white dark:bg-[#1e2330] p-4 rounded-[1.5rem] border border-slate-200 dark:border-white/10 shadow-sm hover:border-green-500/50 transition-all group">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex flex-col">
-                        <span className="text-xs font-black text-slate-800 dark:text-white truncate">{user.name}</span>
-                        <span className="text-[10px] text-slate-400 truncate">{user.email}</span>
+          {
+            fetchingAgents && (
+                <div className='w-full flex justify-center items-center py-3'>
+                  <Spinner size="w-10 h-10" color="text-green-500" />
+                </div>
+              )
+          }
+          {
+            !fetchingAgents && (
+              <div className="bg-slate-200/30 dark:bg-black/20 rounded-[2.5rem] p-6 border border-slate-200 dark:border-white/5">
+                <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide snap-x">
+                  <div className="grid grid-rows-3 grid-flow-col gap-4">
+                    {agents.filter(u => u.name.toLowerCase().includes(searchQuery.toLowerCase())).map((user) => (
+                      <div key={user.id} className="w-64 snap-start bg-white dark:bg-[#1e2330] p-4 rounded-[1.5rem] border border-slate-200 dark:border-white/10 shadow-sm hover:border-green-500/50 transition-all group">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black text-slate-800 dark:text-white truncate">{user.name}</span>
+                            <span className="text-[10px] text-slate-400 truncate">{user.email}</span>
+                          </div>
+                          <input onChange={()=>handleAgentSelection(user.id)} checked={agentsSelected.includes(user.id)} type="checkbox" className="accent-green-500 w-4 h-4 rounded-md cursor-pointer" />
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-slate-50 dark:border-white/5 flex justify-between items-center">
+                          <span className="text-[8px] font-black uppercase text-green-500 tracking-widest">Select Agent</span>
+                          <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                        </div>
                       </div>
-                      <input onChange={()=>handleAgentSelection(user.id)} checked={agentsSelected.includes(user.id)} type="checkbox" className="accent-green-500 w-4 h-4 rounded-md cursor-pointer" />
-                    </div>
-                    <div className="mt-2 pt-2 border-t border-slate-50 dark:border-white/5 flex justify-between items-center">
-                      <span className="text-[8px] font-black uppercase text-green-500 tracking-widest">Select Agent</span>
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                    </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
-          </div>
+            )
+          }
+
         </section>
       )}
 

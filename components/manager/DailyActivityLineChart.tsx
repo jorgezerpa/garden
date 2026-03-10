@@ -5,6 +5,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer 
 } from 'recharts';
+import { Spinner } from '@/components/Spinner';
 
 // Reusable Chart Component remains the same
 const MiniLineChart = ({ title, subtitle, data, dataKey, color, label }: any) => (
@@ -46,24 +47,23 @@ const MiniLineChart = ({ title, subtitle, data, dataKey, color, label }: any) =>
 );
 
 export function DailyActivityLineCharts({triggerPerAgentSearch, agentsSelected, fromDate, toDate}:{triggerPerAgentSearch:boolean, agentsSelected:number[], fromDate: string, toDate: string}) {
-  // Helper to get today's date in YYYY-MM-DD
-  const getToday = () => new Date().toISOString().split('T')[0];
-
   const [data, setData] = useState<any[]>([]);
-  // const [fromDate, setFromDate] = useState(lastCallDate);
-  // const [toDate, setToDate] = useState(lastCallDate);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
+      setIsLoading(true);
       try {
-        // Now re-fetches whenever fromDate or toDate changes
         const result = await getDailyActivity(fromDate, toDate, { agents:agentsSelected });
         setData(result);
       } catch (error) {
+        console.error("Daily activity fetch error:", error);
         setData([]);
+      } finally {
+        setIsLoading(false);
       }
     })();
-  }, [fromDate, toDate, triggerPerAgentSearch]); // Dependencies added here
+  }, [fromDate, toDate, triggerPerAgentSearch]); 
 
   return (
     <div className='bg-white dark:bg-[#1e2330] p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-sm mt-8'>
@@ -72,36 +72,22 @@ export function DailyActivityLineCharts({triggerPerAgentSearch, agentsSelected, 
           <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Daily Activity Analysis</h3>
           <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Performance Trend Analysis</p>
         </div>
-
-        {/* Date Inputs Aligned Right */}
-        {/* <div className="flex items-center gap-3 bg-slate-50 dark:bg-white/5 p-2 rounded-2xl border border-slate-200 dark:border-white/10">
-          <div className="flex flex-col px-2">
-            <label className="text-[9px] font-black text-slate-400 uppercase">From</label>
-            <input 
-              type="date" 
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="bg-transparent text-xs font-bold focus:outline-none dark:text-white"
-            />
-          </div>
-          <div className="h-8 w-[1px] bg-slate-200 dark:bg-white/10" />
-          <div className="flex flex-col px-2">
-            <label className="text-[9px] font-black text-slate-400 uppercase">To</label>
-            <input 
-              type="date" 
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="bg-transparent text-xs font-bold focus:outline-none dark:text-white"
-            />
-          </div>
-        </div> */}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <MiniLineChart title="Talk Time" subtitle="Minutes Analysis" data={data} dataKey="talkTime" color="#22c55e" label="Minutes" />
-        <MiniLineChart title="Logged Calls" subtitle="Volume Trend" data={data} dataKey="calls" color="#0ea5e9" label="Calls" />
-        <MiniLineChart title="Seeds Logged" subtitle="Growth Tracking" data={data} dataKey="seeds" color="#8b5cf6" label="Seeds" />
-      </div>
+      {isLoading ? (
+        <div className="w-full flex flex-col items-center justify-center py-24 min-h-[300px]">
+          <Spinner size="w-10 h-10" color="text-indigo-500" />
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mt-6 animate-pulse">
+            Processing activity trends...
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
+          <MiniLineChart title="Talk Time" subtitle="Minutes Analysis" data={data} dataKey="talkTime" color="#22c55e" label="Minutes" />
+          <MiniLineChart title="Logged Calls" subtitle="Volume Trend" data={data} dataKey="calls" color="#0ea5e9" label="Calls" />
+          <MiniLineChart title="Seeds Logged" subtitle="Growth Tracking" data={data} dataKey="seeds" color="#8b5cf6" label="Seeds" />
+        </div>
+      )}
     </div>
   );
 }
