@@ -11,10 +11,13 @@ export default function Home() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
+  // LOADING & ERROR STATES
+  const [isLoading, setIsLoading] = useState(true)
+  const [isRegistering, setIsRegistering] = useState(false)
+  const [toast, setToast] = useState({ show: false, message: '', type: 'error' as 'error' | 'success' })
+
   // MINDSET COMPONENT
-  
-  const [assignedSchema, setAssignedSchema] = useState<
-  {
+  const [assignedSchema, setAssignedSchema] = useState<{
     id: number
     name: string
     companyId: number
@@ -27,8 +30,7 @@ export default function Home() {
       name: string
       schemaId: number,
    }[]
-  }
-  |null>(null);
+  } | null>(null);
 
   const [mindset, setMindset] = useState({ energy: 0, focus: 0, motivation: 0 });
   const [agentInsights, setAgentInsights] = useState<{
@@ -71,65 +73,74 @@ export default function Home() {
 
   type AgentInsights = typeof agentInsights;
 
+  // Toast Helper
+  const showToast = (message: string, type: 'error' | 'success' = 'error') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'error' }), 5000);
+  };
+
   useEffect(() => setMounted(true), [])
   
-  useEffect(()=>{
-    (async()=>{
+  useEffect(() => {
+    const fetchData = async (isBackgroundUpdate = false) => {
+      if (!isBackgroundUpdate) setIsLoading(true);
+      
       try {
+        const date = new Date();
         const dateStr = [
           date.getFullYear(),
           String(date.getMonth() + 1).padStart(2, '0'),
           String(date.getDate()).padStart(2, '0')
         ].join('-');
-        const response = await getAgentDayInsights(dateStr)
-        setMindset({ energy: response.energy, focus: response.focus, motivation: response.motivation })
+
+        const [insights, weeklyGrowth, schema] = await Promise.all([
+          getAgentDayInsights(dateStr),
+          getAgentWeeklyGrowth(dateStr),
+          getAssignedSchema(dateStr)
+        ]);
+
+        setAgentInsights(insights);
+        setWeeklyGrowthData(weeklyGrowth);
+        setAssignedSchema(schema);
+        
+        if (!isBackgroundUpdate) {
+          setMindset({ energy: insights.energy, focus: insights.focus, motivation: insights.motivation });
+        }
       } catch (error) {
-        console.log("error agent dashboard")
+        console.log("error agent dashboard", error);
+        if (isBackgroundUpdate) {
+          showToast("Connection unstable. Cannot update data, refetching in 20 seconds...", "error");
+        } else {
+          showToast("Something went wrong fetching your dashboard data.", "error");
+        }
+      } finally {
+        if (!isBackgroundUpdate) setIsLoading(false);
       }
-    })()
-  }, [])
+    };
 
-  useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const dateStr = [
-        date.getFullYear(),
-        String(date.getMonth() + 1).padStart(2, '0'),
-        String(date.getDate()).padStart(2, '0')
-      ].join('-');
+    // 1. Run immediately on mount
+    fetchData(false);
 
-      const [insights, weeklyGrowth, schema] = await Promise.all([
-        getAgentDayInsights(dateStr),
-        getAgentWeeklyGrowth(dateStr),
-        getAssignedSchema(dateStr)
-      ]);
+    // 2. Set up the 20-second interval
+    const intervalId = setInterval(() => fetchData(true), 20000);
 
-      setAgentInsights(insights);
-      setWeeklyGrowthData(weeklyGrowth);
-      setAssignedSchema(schema);
-    } catch (error) {
-      console.log("error agent dashboard", error);
-    }
-  };
-
-  // 1. Run immediately on mount
-  fetchData();
-
-  // 2. Set up the 10-second interval
-  const intervalId = setInterval(fetchData, 20000);
-
-  // 3. Clean up on unmount
-  return () => clearInterval(intervalId);
-}, []); 
+    // 3. Clean up on unmount
+    return () => clearInterval(intervalId);
+  }, []); 
 
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
 
-  const handleRegisterMinset = () => {
+  const handleRegisterMinset = async () => {
+    if (isRegistering) return;
+    setIsRegistering(true);
     try {
-
-      registerAgentState(mindset.energy, mindset.focus, mindset.motivation)
+      await registerAgentState(mindset.energy, mindset.focus, mindset.motivation);
+      showToast("Mindset registered successfully!", "success");
     } catch (error) {
-      console.log(error)
+      console.log(error);
+      showToast("Something went wrong registering your mindset.", "error");
+    } finally {
+      setIsRegistering(false);
     }
   }
 
@@ -142,21 +153,18 @@ export default function Home() {
     rounded-2xl p-4 transition-all duration-500
   `;
 
-  const date = new Date(); // or pass your specific date object
+  const date = new Date();
   const formattedDate = new Intl.DateTimeFormat('en-US', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
   }).format(date);
 
-  if (!mounted) return null
-
   const getFormatedHour = (minutesFromMidnight0: number, minutesFromMidnight1: number): string => {
     const formatTime = (totalMinutes: number): string => {
       const hours = Math.floor(totalMinutes / 60);
       const mins = totalMinutes % 60;
       
-      // Ensure 2-digit military format (00:00 - 23:59)
       const HH = String(hours).padStart(2, '0');
       const MM = String(mins).padStart(2, '0');
       
@@ -166,12 +174,10 @@ export default function Home() {
     return `${formatTime(minutesFromMidnight0)} - ${formatTime(minutesFromMidnight1)}`;
   };
 
-// Example Usage:
-// getFormatedHour(540, 1020); // "09:00 - 17:00"
-// getFormatedHour(30, 90);    // "00:30 - 01:30"
+  if (!mounted) return null
 
   return (
-    <div className="min-h-screen transition-colors duration-500 bg-slate-100 dark:bg-[#1a1f2b] text-slate-800 dark:text-slate-200 p-4 md:p-6 flex flex-col gap-4 font-sans selection:bg-green-500/30">
+    <div className="min-h-screen transition-colors duration-500 bg-slate-100 dark:bg-[#1a1f2b] text-slate-800 dark:text-slate-200 p-4 md:p-6 flex flex-col gap-4 font-sans selection:bg-green-500/30 overflow-x-hidden">
       
       {/* Background Glow Decorations (Dark Mode Only) */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-0 dark:opacity-100 transition-opacity duration-1000">
@@ -181,27 +187,26 @@ export default function Home() {
 
       {/* --- Header / Top Bar --- */}
       <header className={`${cardStyle} flex items-center justify-between !py-3 relative z-10`}>
-      <div className="flex items-center gap-3">
-        {/* The Parent Container controls the size */}
-        <div className="relative w-10 h-10 rounded-lg shadow-sm dark:shadow-lg shadow-green-500/20 overflow-hidden">
-          <Image
-            src="/icons-agent-dashboard/Logo.svg"
-            alt="Sales Garden Logo"
-            fill
-            className="object-cover"
-            priority
-          />
+        <div className="flex items-center gap-3">
+          <div className="relative w-10 h-10 rounded-lg shadow-sm dark:shadow-lg shadow-green-500/20 overflow-hidden">
+            <Image
+              src="/icons-agent-dashboard/Logo.svg"
+              alt="Sales Garden Logo"
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+          <h1 className="font-bold text-lg hidden sm:block tracking-tight text-slate-700 dark:text-slate-100">
+            Sales Garden
+          </h1>
         </div>
-  
-  <h1 className="font-bold text-lg hidden sm:block tracking-tight text-slate-700 dark:text-slate-100">
-    Sales Garden
-  </h1>
-</div>
 
         <div className="flex items-center gap-6">
           <div className="hidden md:flex flex-col items-end text-sm">
             <span className="opacity-70">
-              Welcome, <span className="font-bold text-green-500 dark:text-green-400">Sarah</span>
+              Welcome, 
+              {/* <span className="font-bold text-green-500 dark:text-green-400">Sarah</span> */}
             </span>
             <span className="text-[10px] uppercase tracking-widest opacity-40 font-semibold">
               { formattedDate }
@@ -212,9 +217,6 @@ export default function Home() {
             onClick={toggleTheme}
             className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-green-500/10 border border-slate-200 dark:border-white/10 transition-all active:scale-95"
           >
-            {/* Container is w-5 h-5 to match standard icon sizing. 
-              Using 'relative' so the Image component can 'fill' it.
-            */}
             <div className="relative w-6 h-6">
               {theme === 'dark' ? (
                 <Image 
@@ -240,8 +242,6 @@ export default function Home() {
             logout
           </button>
         </div>
-
-
       </header>
 
       {/* --- Main Content Grid --- */}
@@ -250,69 +250,83 @@ export default function Home() {
         {/* Left Column */}
         <section className="flex flex-col gap-4 w-full lg:w-1/4">
           {/* --- Mindset Section --- */}
-          <div className={`${cardStyle} h-auto min-h-48`}>
+          <div className={`${cardStyle} h-auto min-h-48 flex flex-col`}>
             <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-6">
               Mindset Check
             </h3>
             
-            <div className="flex flex-col">
-              <MindsetSlider 
-                id="energy"
-                label="Energy" 
-                color="bg-green-500" 
-                value={mindset.energy} 
-                onChange={(v) => setMindset({...mindset, energy: v})} 
-              />
-              <MindsetSlider
-                id="focus" 
-                label="Focus" 
-                color="bg-yellow-500" 
-                value={mindset.focus} 
-                onChange={(v) => setMindset({...mindset, focus: v})} 
-              />
-              <MindsetSlider 
-                id="motivation"
-                label="Motivation" 
-                color="bg-orange-500" 
-                value={mindset.motivation} 
-                onChange={(v) => setMindset({...mindset, motivation: v})} 
-              />
+            <div className="flex flex-col flex-1">
+              {isLoading ? (
+                <div className="flex flex-col gap-6 py-2">
+                  <Skeleton className="h-6 w-full" />
+                  <Skeleton className="h-6 w-full" />
+                  <Skeleton className="h-6 w-full" />
+                </div>
+              ) : (
+                <>
+                  <MindsetSlider 
+                    id="energy"
+                    label="Energy" 
+                    color="bg-green-500" 
+                    value={mindset.energy} 
+                    onChange={(v) => setMindset({...mindset, energy: v})} 
+                  />
+                  <MindsetSlider
+                    id="focus" 
+                    label="Focus" 
+                    color="bg-yellow-500" 
+                    value={mindset.focus} 
+                    onChange={(v) => setMindset({...mindset, focus: v})} 
+                  />
+                  <MindsetSlider 
+                    id="motivation"
+                    label="Motivation" 
+                    color="bg-orange-500" 
+                    value={mindset.motivation} 
+                    onChange={(v) => setMindset({...mindset, motivation: v})} 
+                  />
+                </>
+              )}
             </div>
 
-
-            <div onClick={handleRegisterMinset} className='cursor-pointer mx-auto rounded-xl py-3 bg-[#00C950] dark:bg-[#1A4F3D] text-white dark:text-[#00C950] text-center text-[13px] tracking-[0.2em]'>Register Mindset</div>
+            <button 
+              onClick={handleRegisterMinset} 
+              disabled={isRegistering || isLoading}
+              className={`mt-4 w-full rounded-xl py-3 text-center text-[13px] tracking-[0.2em] font-medium transition-all
+                ${isRegistering || isLoading
+                  ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed' 
+                  : 'bg-[#00C950] dark:bg-[#1A4F3D] text-white dark:text-[#00C950] hover:bg-green-600 dark:hover:bg-green-900 cursor-pointer active:scale-95'
+                }`}
+            >
+              {isRegistering ? 'REGISTERING...' : 'REGISTER MINDSET'}
+            </button>
           </div>
 
         
-          {/* /* --- Reset Zone Section --- */} 
+          {/* --- Historical Overview Section --- */} 
           <div className="bg-white dark:bg-[#252b39]/80 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-[0_0_15px_rgba(0,0,0,0.4)] rounded-2xl p-4 flex-1 min-h-[180px] flex flex-col relative overflow-hidden transition-all duration-500">
             
-            {/* 1. Section Header */}
             <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-4">
               Historical Overview
             </h3>
 
-            {/* 2. Sub-label for the Graph Area */}
             <div className="flex items-center gap-2 mb-2">
               <span className="text-[12px] font-medium text-slate-600 dark:text-slate-300">
                 Weekly Growth
               </span>
-              {/* Subtle indicator dot */}
               <div className="w-1.5 h-1.5 rounded-full bg-green-500/50" />
             </div>
 
-            {/* 3. Graph Placeholder Area */}
-            <div className="flex-1 w-full bg-slate-50/50 dark:bg-black/20 rounded-xl border border-dashed border-slate-200 dark:border-white/5 flex items-center justify-center relative">
-              {/* Atmospheric Glow inside the graph area */}
+            <div className="flex-1 w-full bg-slate-50/50 dark:bg-black/20 rounded-xl border border-dashed border-slate-200 dark:border-white/5 flex items-center justify-center relative min-h-[100px]">
               <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-green-500/5 to-transparent pointer-events-none" />
               
-              {/* <span className="text-[10px] uppercase tracking-widest text-slate-300 dark:text-slate-600 font-bold">
-                Graph Component Area
-              </span> */}
-              <LineChart data={weeklyGrowthData} />
+              {isLoading ? (
+                <Skeleton className="w-full h-full absolute inset-0 rounded-xl" />
+              ) : (
+                <LineChart data={weeklyGrowthData} />
+              )}
             </div>
 
-            {/* 4. X-Axis Labels Placeholder */}
             <div className="flex justify-between mt-2 px-1">
               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day) => (
                 <span key={day} className="text-[9px] font-bold uppercase tracking-tighter text-slate-400 dark:text-slate-600">
@@ -326,21 +340,27 @@ export default function Home() {
         {/* Middle Column */}
         <section className="flex flex-col gap-4 w-full lg:w-1/2">
           {/* --- Talk Time --- */}
-          {/* @TODO replace with current day goal  */}
-          <TalkTime time={agentInsights.talkTime} goal={0} total_calls={agentInsights.number_of_calls} total_deep_calls={agentInsights.number_of_deep_call} /> 
+          {isLoading ? (
+            <div className={`${cardStyle} flex-1 flex items-center justify-center`}>
+              <Skeleton className="w-48 h-48 rounded-full" />
+            </div>
+          ) : (
+             <TalkTime time={agentInsights.talkTime} goal={agentInsights.goalTalkTimeMinutes || 0} total_calls={agentInsights.number_of_calls} total_deep_calls={agentInsights.number_of_deep_call} /> 
+          )}
 
-          {/* --- streak tracker Section --- */}
+          {/* --- Streak Tracker Section --- */}
           <div className="bg-white dark:bg-[#252b39]/80 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-[0_0_15px_rgba(0,0,0,0.4)] rounded-2xl p-4 flex-1 relative  group transition-all duration-500">
 
-            
-            {/* 2. Header Label with decorative lines */}
             <div className="relative z-10 flex flex-col items-center justify-center gap-3 mb-6">
-
               <h3 className="text-[15px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-gray-100">
                 Current Streak
               </h3>
               <div className="flex items-baseline justify-center gap-1">
-                <span className="text-2xl font-bold tracking-tight text-slate-700 dark:text-white">{ agentInsights.currentStreak }%</span>
+                {isLoading ? (
+                  <Skeleton className="w-16 h-8" />
+                ) : (
+                  <span className="text-2xl font-bold tracking-tight text-slate-700 dark:text-white">{ agentInsights.currentStreak }%</span>
+                )}
               </div>
             </div>
 
@@ -354,12 +374,16 @@ export default function Home() {
                   { label: "Long Calls", currentValueKey: "number_of_deep_call" as keyof AgentInsights, goalKey: "goalNumberOfLongCalls" as keyof AgentInsights },
                   { label: "Talk Time (min)", currentValueKey: "talkTime" as keyof AgentInsights, goalKey: "goalTalkTimeMinutes" as keyof AgentInsights }
                 ].map(item => (
-                  <div className="text-center">
+                  <div className="text-center" key={item.label}>
                     <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-200 block mb-1">
                       { item.label }
                     </span>
                     <div className="flex items-baseline justify-center gap-1">
-                      <span className="text-lg font-bold tracking-tight text-slate-700 dark:text-white">{agentInsights[item.currentValueKey]}/{ agentInsights[item.goalKey] }</span>
+                      {isLoading ? (
+                        <Skeleton className="w-10 h-6 mx-auto" />
+                      ) : (
+                        <span className="text-lg font-bold tracking-tight text-slate-700 dark:text-white">{agentInsights[item.currentValueKey]}/{ agentInsights[item.goalKey] }</span>
+                      )}
                     </div>
                   </div>
                 ))
@@ -377,33 +401,43 @@ export default function Home() {
               Today&apos;s Stats
             </h3>
             
-            <div className="flex flex-col h-full justify-between pb-4">
-              <StatRow id="seeds" label="Seeds" value={agentInsights.seeds} />
-              {/* <StatRow id="callback" label="Callback" value={agentInsights.} /> */}
-              <StatRow id="lead" label="Lead" value={agentInsights.leads} />
-              <StatRow id="sale" label="Sale" value={agentInsights.sales} />
+            <div className="flex flex-col h-full justify-between pb-4 gap-2">
+              <StatRow id="seeds" label="Seeds" value={agentInsights.seeds} isLoading={isLoading} />
+              {/* <StatRow id="callback" label="Callback" value={agentInsights.} isLoading={isLoading} /> */}
+              <StatRow id="lead" label="Lead" value={agentInsights.leads} isLoading={isLoading} />
+              <StatRow id="sale" label="Sale" value={agentInsights.sales} isLoading={isLoading} />
             </div>
           </div>
+          
           {/* --- Call Blocks Section --- */}
-          <div className={`${cardStyle} flex flex-col`}>
+          <div className={`${cardStyle} flex flex-col flex-1`}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
                 Call Blocks
               </h3>
-              {/* Icon Placeholder */}
-              {/* <div className="w-4 h-4 bg-slate-200 dark:bg-slate-700 rounded" /> */}
             </div>
             
-            <div className="flex flex-col gap-1 max-h-[400px] overflow-y-scroll">
-              {
-                assignedSchema?.blocks.map(block => (
-                  <CallBlock time={getFormatedHour(block.startMinutesFromMidnight, block.endMinutesFromMidnight)} status={block.blockType} />
-
-                ))
-              }
-              {
-                !assignedSchema && <div className='text-[11px] tracking-[0.2em]'>No schema assigned today</div>
-              }
+            <div className="flex flex-col gap-1 max-h-[400px] overflow-y-auto pr-1">
+              {isLoading ? (
+                <>
+                  <Skeleton className="w-full h-10 mb-2" />
+                  <Skeleton className="w-full h-10 mb-2" />
+                  <Skeleton className="w-full h-10" />
+                </>
+              ) : (
+                <>
+                  {assignedSchema?.blocks.map(block => (
+                    <CallBlock 
+                      key={block.id} 
+                      time={getFormatedHour(block.startMinutesFromMidnight, block.endMinutesFromMidnight)} 
+                      status={block.blockType} 
+                    />
+                  ))}
+                  {!assignedSchema && (
+                    <div className='text-[11px] tracking-[0.2em] text-slate-400'>No schema assigned today</div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -413,19 +447,36 @@ export default function Home() {
       {/* --- Footer --- */}
       <footer className="flex items-center justify-between px-2 py-2 text-[10px] font-bold opacity-40 uppercase tracking-widest relative z-10">
         <div>Version 1.0</div>
-        {/* <div className="italic text-center hidden md:block lowercase tracking-normal opacity-80">&quot;Seeds now, harvest later!&quot;</div> */}
         <div className="italic text-center hidden md:block lowercase tracking-normal opacity-80"></div>
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" />
-          Connected
+          <div className={`w-2 h-2 rounded-full ${toast.type === 'error' && toast.show ? 'bg-red-500 shadow-[0_0_8px_#ef4444]' : 'bg-green-500 shadow-[0_0_8px_#22c55e]'}`} />
+          {toast.type === 'error' && toast.show ? 'Error' : 'Connected'}
         </div>
       </footer>
+
+      {/* --- Toast Notification System --- */}
+      <div className={`fixed bottom-6 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'}`}>
+        <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border backdrop-blur-md
+          ${toast.type === 'error' 
+            ? 'bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400' 
+            : 'bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400'
+          }`}
+        >
+          <div className={`w-2 h-2 rounded-full ${toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'}`} />
+          <p className="text-sm font-medium">{toast.message}</p>
+        </div>
+      </div>
     </div>
   )
 }
 
 
-
+//////////////////////////////////
+// UTILS / HELPERS
+/////////////////////////////////
+const Skeleton = ({ className }: { className?: string }) => (
+  <div className={`animate-pulse bg-slate-200/60 dark:bg-white/5 rounded-md ${className}`} />
+);
 
 //////////////////////////////////
 // MINDSET COMPONENT
@@ -433,7 +484,7 @@ export default function Home() {
 interface MindsetSliderProps {
   id: string;
   label: string;
-  color: string; // Tailwind color class like 'bg-green-500' or 'bg-orange-400'
+  color: string; 
   value: number;
   onChange: (val: number) => void;
 }
@@ -521,8 +572,6 @@ const MindsetSlider = ({ id, label, color, value, onChange }: MindsetSliderProps
             [&::-moz-range-thumb]:border-0  
           `
 
-
-
   return (
     <div className="flex flex-col gap-2 w-full mb-4 group">
       <div className="flex justify-between items-center">
@@ -595,11 +644,10 @@ interface StatRowProps {
   id: string;
   label: string;
   value: number | string;
-  // We'll keep a slot for the icon placeholder as requested earlier
+  isLoading?: boolean;
 }
 
-const StatRow = ({ id, label, value }: StatRowProps) => {
-  // Map the labels to your svg filenames in the public folder
+const StatRow = ({ id, label, value, isLoading }: StatRowProps) => {
   let iconSrc = `/icons-agent-dashboard/`;
   if(id ==="seeds") iconSrc += "Seeds.svg"
   if(id ==="callback") iconSrc += "Callbacks.svg"
@@ -609,13 +657,12 @@ const StatRow = ({ id, label, value }: StatRowProps) => {
   return (
     <div className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-white/5 last:border-0 group">
       <div className="flex items-center gap-3">
-        {/* Container for the Next.js Image */}
         <div className="relative w-6 h-6 rounded-md transition-colors  overflow-hidden">
           <Image
             src={iconSrc}
             alt={`${label} icon`}
             fill
-            className="object-contain p-0.5" // object-contain is usually better for icons
+            className="object-contain p-0.5" 
           />
         </div>
         
@@ -624,9 +671,13 @@ const StatRow = ({ id, label, value }: StatRowProps) => {
         </span>
       </div>
       
-      <span className="text-sm font-bold tabular-nums text-slate-700 dark:text-white">
-        {value}
-      </span>
+      {isLoading ? (
+        <Skeleton className="w-8 h-5" />
+      ) : (
+        <span className="text-sm font-bold tabular-nums text-slate-700 dark:text-white">
+          {value}
+        </span>
+      )}
     </div>
   );
 };
@@ -636,54 +687,23 @@ interface CallBlockProps {
   status: string;
 }
 
-
 //////////////////////////////////
 // CALL BLOCKS
 /////////////////////////////////
 const CallBlock = ({ time, status }: CallBlockProps) => {
-  // Logic for color variants
-  const statusConfig = {
-    active: {
-      dot: "bg-green-500 shadow-[0_0_8px_#22c55e]",
-      badge: "bg-green-500/20 text-green-500 border-green-500/30",
-      text: "text-slate-700 dark:text-white font-bold",
-      label: "Active"
-    },
-    upcoming: {
-      dot: "bg-slate-300 dark:bg-slate-600",
-      badge: "bg-slate-100 dark:bg-white/5 text-slate-500 border-slate-200 dark:border-white/10",
-      text: "text-slate-500 dark:text-slate-400 font-medium",
-      label: "Upcoming"
-    },
-    locked: {
-      dot: "bg-slate-200 dark:bg-slate-800",
-      badge: "bg-slate-50 dark:bg-black/20 text-slate-400 border-transparent",
-      text: "text-slate-400 dark:text-slate-600 font-medium",
-      label: "Locked"
-    }
-  };
-
-  // const config = statusConfig[status];
-
   return (
-    <div className={`flex items-center justify-between py-2.5 px-2 rounded-xl transition-colors ${status === 'active' ? 'bg-green-500/5' : ''}`}>
+    <div className={`flex items-center justify-between py-2.5 px-2 rounded-xl transition-colors ${status === 'WORKING' ? 'bg-green-500/5' : ''}`}>
       <div className="flex items-center gap-3">
-        {/* Status Dot */}
-        {/* <div className={`w-2 h-2 rounded-full ${config.dot}`} /> */}
-        <div className={`w-2 h-2 rounded-full`} />
+        <div className={`w-2 h-2 rounded-full ${status === 'WORKING' ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-slate-300 dark:bg-slate-600'}`} />
         
-        {/* <span className={`text-[12px] tabular-nums ${config.text}`}> */}
-        <span className={`text-[12px] tabular-nums`}>
+        <span className={`text-[12px] tabular-nums ${status === 'WORKING' ? 'text-slate-700 dark:text-white font-bold' : 'text-slate-500 dark:text-slate-400 font-medium'}`}>
           {time}
         </span>
       </div>
       
-      {/* Status Badge */}
-      {/* <div className={`text-[9px] px-2.5 py-1 rounded-lg border uppercase tracking-tighter font-bold ${config.badge}`}> */}
-      <div className={`text-[9px] px-2.5 py-1 rounded-lg border uppercase tracking-tighter font-bold`}>
+      <div className={`text-[9px] px-2.5 py-1 rounded-lg border uppercase tracking-tighter font-bold ${status === 'WORKING' ? 'bg-green-500/20 text-green-500 border-green-500/30' : 'bg-slate-100 dark:bg-white/5 text-slate-500 border-slate-200 dark:border-white/10'}`}>
         {status}
       </div>
     </div>
   );
 };
-

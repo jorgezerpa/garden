@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, ChangeEvent } from 'react'
+import { useState, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { loginUser } from '@/apiHandlers/auth'
 import { useRouter } from 'next/navigation'
@@ -9,23 +9,52 @@ export default function SignIn() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [formData, setFormData] = useState({ email: '', password: '', name: '' })
+  
+  // New State for Validation
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => setMounted(true), [])
+
+  // Clear error when user retypes
+  useEffect(() => {
+    if (error) setError(null)
+  }, [formData.email, formData.password])
+
   if (!mounted) return null
 
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
 
-
-  const handleSubmit = async () => {
-      try {
-        await loginUser({ email:formData.email, password: formData.password })
-        router.push('/agent-dashboard')
-      } catch (error: any) {
-        console.log(error)
-      }
+  const validateEmail = (email: string) => {
+    return String(email)
+      .toLowerCase()
+      .match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
   }
 
+  const handleSubmit = async () => {
+    // 1. Validate Email Format
+    if (!validateEmail(formData.email)) {
+      setError("Please enter a valid garden email")
+      return
+    }
 
+    // 2. Validate Password Presence
+    if (formData.password.length < 1) {
+      setError("Password is required to enter")
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      await loginUser({ email: formData.email, password: formData.password })
+      router.push('/agent-dashboard')
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Access Denied: Invalid Credentials")
+      console.log(err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-[#1a1f2b] flex items-center justify-center p-6 transition-colors duration-500 font-sans selection:bg-green-500/30 relative overflow-hidden">
@@ -63,17 +92,19 @@ export default function SignIn() {
             </p>
           </div>
 
-          <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
           
             <div className="space-y-1.5">
               <label className="text-[10px] uppercase tracking-widest font-black text-slate-400 ml-1">Email Address</label>
               <input 
                 onChange={(e)=>setFormData(curr=> ({ ...curr, email: e.target.value }))}
                 value={formData.email}
-                type="email" 
+                type="text" 
                 placeholder="sarah@garden.com"
-                className="dark:text-gray-200 w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-2xl px-5 py-3.5 text-sm outline-none focus:border-green-500/50 transition-all placeholder:opacity-30"
-                />
+                className={`dark:text-gray-200 w-full bg-slate-50 dark:bg-black/20 border rounded-2xl px-5 py-3.5 text-sm outline-none transition-all placeholder:opacity-30 ${
+                  error && !validateEmail(formData.email) ? 'border-red-500/50 bg-red-500/5' : 'border-slate-200 dark:border-white/5 focus:border-green-500/50'
+                }`}
+              />
             </div>
 
             <div className="space-y-1.5 pb-2">
@@ -85,12 +116,33 @@ export default function SignIn() {
                 value={formData.password}
                 type="password" 
                 placeholder="••••••••"
-                className="dark:text-gray-200 w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-2xl px-5 py-3.5 text-sm outline-none focus:border-green-500/50 transition-all placeholder:opacity-30"
+                className={`dark:text-gray-200 w-full bg-slate-50 dark:bg-black/20 border rounded-2xl px-5 py-3.5 text-sm outline-none transition-all placeholder:opacity-30 ${
+                  error && formData.password.length < 1 ? 'border-red-500/50 bg-red-500/5' : 'border-slate-200 dark:border-white/5 focus:border-green-500/50'
+                }`}
               />
             </div>
 
-            <button type='button' onClick={handleSubmit} className="w-full py-4 rounded-2xl bg-green-500 hover:bg-green-400 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-green-500/30 transition-all active:scale-[0.98] mt-4">
-              login
+            {/* Error UI Section */}
+            {error && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300 py-2 px-1">
+                <p className="text-[10px] font-black uppercase tracking-tighter text-red-500 dark:text-red-200 bg-red-500/10 py-2 px-3 rounded-lg border border-red-500/20 inline-block">
+                  {error}
+                </p>
+              </div>
+            )}
+
+            <button 
+              disabled={isLoading}
+              type='submit' 
+              className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg transition-all active:scale-[0.98] mt-4 flex justify-center items-center ${
+                isLoading 
+                ? 'bg-slate-400 cursor-not-allowed opacity-70' 
+                : 'bg-green-500 hover:bg-green-400 text-white shadow-green-500/30'
+              }`}
+            >
+              {isLoading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : 'Login'}
             </button>
           </form>
           

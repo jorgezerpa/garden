@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react';
 
-export function TalkTime({time, goal, total_calls, total_deep_calls}:{time:number, goal:number, total_calls: number, total_deep_calls: number}) {
+export function TalkTime({time, goal, total_calls, total_deep_calls, talkTimeGoal}:{time:number, goal:number, total_calls: number, total_deep_calls: number, talkTimeGoal: number}) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -112,7 +112,7 @@ export function TalkTime({time, goal, total_calls, total_deep_calls}:{time:numbe
             </h2>
             <div className="flex items-center justify-center gap-2 mt-2">
                 <div className="w-1 h-1 rounded-full bg-green-500" />
-                <span className="text-[14px] font-bold opacity-40 uppercase tracking-widest">Goal: 4h</span>
+                <span className="text-[14px] font-bold opacity-40 uppercase tracking-widest">Goal: {goal||0}min</span>
             </div>
           </div>
         </div>
