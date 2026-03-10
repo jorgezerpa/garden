@@ -168,19 +168,7 @@ export default function AgentsComparison() {
         </div>
       </div>
 
-      <div className="flex gap-4 p-6 bg-green-500/5 rounded-3xl border border-green-500/10">
-        <div className="w-10 h-10 rounded-2xl bg-green-500 flex items-center justify-center text-white shrink-0">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-          </svg>
-        </div>
-        <div>
-          <h4 className="text-[10px] font-black uppercase text-green-600 tracking-widest mb-1">Comparative Analytics</h4>
-          <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 leading-relaxed">
-            Sorting by **Consistency Score** reveals your most reliable assets.
-          </p>
-        </div>
-      </div>
+     
     </div>
   );
 }

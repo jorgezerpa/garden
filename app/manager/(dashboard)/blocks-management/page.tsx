@@ -315,9 +315,9 @@ export default function BlocksManagement() {
                       <div key={idx} className={`flex flex-col justify-center px-4 py-3 rounded-2xl border ${style.color} bg-opacity-10 dark:bg-opacity-5`}>
                         <div className="flex items-center gap-2 mb-1">
                           <div className={`w-2 h-2 rounded-full ${style.color.split(' ')[0]}`} />
-                          <span className="text-[9px] font-black uppercase tracking-widest opacity-80">{style.label}</span>
+                          <span className="text-[9px] font-black uppercase tracking-widest opacity-80 text-gray-50">{style.label}</span>
                         </div>
-                        <p className="text-sm font-bold dark:text-white">
+                        <p className="text-sm font-bold text-white">
                           {formatTime(block.startMinutesFromMidnight)} - {formatTime(block.endMinutesFromMidnight)}
                         </p>
                       </div>
