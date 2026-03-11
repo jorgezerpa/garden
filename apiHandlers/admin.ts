@@ -43,6 +43,17 @@ export interface UpdateAgentData {
   leadDeskId?: string
 }
 
+export const saveLeadDeskAuthString = async (authString: string) => {
+  const response = await adminClient.post('/upsertLeadDeskAPIAuthString', { authString },getAuthHeader());
+  return response.data;
+};
+
+// check if a auth string was already registered
+export const getLeadDeskAuthString = async () => {
+  const response = await adminClient.get('/getLeadDeskAPIAuthString', getAuthHeader());
+  return response.data;
+};
+
 export const addManager = async (data: CreateManagerData) => {
   const response = await adminClient.post('/addManager', data,getAuthHeader());
   return response.data;
