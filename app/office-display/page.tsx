@@ -34,7 +34,7 @@ export default function OfficeDisplay() {
               <circle className="transition-all duration-1000 ease-out" strokeWidth="12" strokeDasharray={2 * Math.PI * 120} strokeDashoffset={2 * Math.PI * 120 * (1 - teamHeat/100)} strokeLinecap="round" stroke="#22c55e" fill="transparent" r="120" cx="160" cy="160" 
                       style={{ filter: 'drop-shadow(0 0 10px #22c55e)' }} />
             </svg>
-            <div className="absolute text-[160px] font-black tracking-tighter drop-shadow-[0_0_25px_rgba(34,197,94,0.4)]">
+            <div className="absolute text-[140px] font-black tracking-tighter drop-shadow-[0_0_25px_rgba(34,197,94,0.4)]">
               {teamHeat}
             </div>
           </div>
