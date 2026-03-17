@@ -12,6 +12,7 @@ import {
 import { CreateSchemaData, Schema, SchemaBlock } from '@/types/BlockSchemas';
 import { Spinner } from '@/components/Spinner';
 import { Toast } from '@/components/Toast';
+import { calculateMondayOfTheWeek, calculateSundayOfTheWeek, getWeekDaysCardsData, WeekDayTuple } from '@/utils/Date';
 
 const formatTime = (minutes: number) => {
   const h = Math.floor(minutes / 60).toString().padStart(2, '0');
@@ -76,17 +77,11 @@ export default function BlocksManagement() {
 
   const fetchWeekAssignations = async (baseDate: string) => {
     setLoading(prev => ({ ...prev, isFetchingAssignations: true }));
-    const date = new Date(baseDate);
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(date.setDate(diff));
-    const sunday = new Date(date.setDate(diff + 6));
+    const monday = calculateMondayOfTheWeek(baseDate);
+    const sunday = calculateSundayOfTheWeek(baseDate);
 
     try {
-      const data = await getSchemaAssignations(
-        monday.toISOString().split('T')[0], 
-        sunday.toISOString().split('T')[0]
-      );
+      const data = await getSchemaAssignations(monday, sunday);
       setAssignations(Array.isArray(data) ? data : []);
     } catch (error) { 
       setToastError("Failed to fetch weekly assignments."); 
@@ -232,21 +227,20 @@ export default function BlocksManagement() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-4 lg:grid-cols-7 gap-4">
-            {getWeekDates().map((date) => {
-              const dateStr = date.toISOString().split('T')[0];
-              const assignation = assignations.find(a => a.date?.toString().split('T')[0] === dateStr);
+            {getWeekDaysCardsData(selectedDate).map((weekDayTuple: WeekDayTuple) => {
+              const assignation = assignations.find(a => a.date?.toString().split('T')[0] === weekDayTuple[0]);
               const assignedSchema = schemas.find(s => s.id === assignation?.schemaId);
               const isUnassigning = loading.isUnassigningBlockSchema === assignation?.id;
-              const isAssigning = loading.isAssigningBlockSchema === dateStr;
+              const isAssigning = loading.isAssigningBlockSchema === weekDayTuple[0];
 
               return (
-                <div key={dateStr} className="group relative bg-white dark:bg-[#1a1f2b] p-5 rounded-[2.2rem] border-2 border-transparent hover:border-indigo-500/20 transition-all flex flex-col items-center min-h-[160px] shadow-sm">
+                <div key={weekDayTuple[0]} className="group relative bg-white dark:bg-[#1a1f2b] p-5 rounded-[2.2rem] border-2 border-transparent hover:border-indigo-500/20 transition-all flex flex-col items-center min-h-[160px] shadow-sm">
                   <div className="text-center mb-6">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                      {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                      {weekDayTuple[3]}
                     </p>
                     <p className="text-sm font-black dark:text-white">
-                      {date.getDate()} <span className="opacity-20">/</span> {date.getMonth() + 1}
+                      {weekDayTuple[2]} <span className="opacity-20">/</span> {weekDayTuple[1]}
                     </p>
                   </div>
 
@@ -268,7 +262,7 @@ export default function BlocksManagement() {
                   ) : (
                     <button 
                       disabled={isAssigning}
-                      onClick={() => setAssigningDate(dateStr)}
+                      onClick={() => setAssigningDate(weekDayTuple[0])}
                       className="w-full mt-auto py-4 border-2 border-dashed border-slate-100 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center transition-all group-hover:bg-indigo-500/5"
                     >
                       {isAssigning ? <Spinner size="w-4 h-4" color="text-indigo-500" /> : <span className="text-[10px] font-black uppercase text-slate-300 group-hover:text-indigo-500">+ Assign</span>}

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { getSeedTimelineHeatmap, getSeedTimelineHeatmapPerDay } from '@/apiHandlers/dataVis';
 import { Spinner } from '@/components/Spinner';
+import { getYear, parseISO } from 'date-fns';
 
 const monthLabels = ['Jan', 'Jun', 'Dec'];
 
@@ -29,7 +30,7 @@ export function SeedHeatmap({ triggerPerAgentSearch, agentsSelected, fromDate, t
     (async () => {
       setIsLoading(true);
       try {
-        const selectedYear = new Date(fromDate).getFullYear()
+        const selectedYear = getYear(parseISO(fromDate))
         const result = await getSeedTimelineHeatmap(selectedYear, { agents: agentsSelected });
         const formattedResult = result.map((d: any) => {
           const [year, month, day] = d.date.split('-').map(Number);
