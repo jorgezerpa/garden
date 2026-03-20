@@ -50,3 +50,7 @@ export const getWeekDaysCardsData = (selectedDate: string): WeekDayTuple[] => {
     format(day, 'eee').toLowerCase(), // "mon"
   ]);
 };
+
+export const getCurrentDay = (): string => {
+  return format(new Date(), 'yyyy-MM-dd');
+};
