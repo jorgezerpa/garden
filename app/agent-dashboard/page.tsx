@@ -2,9 +2,9 @@
 import { LineChart } from '@/components/charts/LineChart'
 import { TalkTime } from '@/components/TalkTime'
 import { useTheme } from 'next-themes'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
-import { getAgentDayInsights, getAgentWeeklyGrowth, getAssignedSchema, registerAgentState } from '@/apiHandlers/agentDashboard'
+import { getAgentDayInsights, getAgentWeeklyGrowth, getAssignedSchema, getProfileImg, registerAgentState, uploadProfile } from '@/apiHandlers/agentDashboard'
 import { logoutUser } from '@/apiHandlers/auth'
 
 export default function Home() {
@@ -15,8 +15,10 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true)
   const [isRegistering, setIsRegistering] = useState(false)
   const [toast, setToast] = useState({ show: false, message: '', type: 'error' as 'error' | 'success' })
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // MINDSET COMPONENT
+  const [profileImg, setProfileImg] = useState<string|null>(null)
   const [assignedSchema, setAssignedSchema] = useState<{
     id: number
     name: string
@@ -128,6 +130,49 @@ export default function Home() {
     return () => clearInterval(intervalId);
   }, []); 
 
+  useEffect(()=>{
+    (async()=>{
+      const result = await getProfileImg()
+      setProfileImg(result?.url||null)
+    })()
+  }, [])
+
+
+  
+
+const handleUploadImg = () => {
+  fileInputRef.current?.click(); // Open the file picker
+};
+
+const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  // Optional: Basic client-side validation
+  if (!file.type.startsWith('image/')) {
+    showToast("Please select a valid image file", "error");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('profile', file); // 'profile' must match your Multer .single('profile')
+
+  setIsLoading(true); // Re-use your existing loading state or create a specific one
+  try {
+    const result = await uploadProfile(formData);
+    setProfileImg(result.url);
+    showToast("Profile image updated!", "success");
+  } catch (error) {
+    console.error(error);
+    showToast("Failed to upload image", "error");
+  } finally {
+    setIsLoading(false);
+    // Clear the input so the same file can be selected again if needed
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+};
+
+
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
 
   const handleRegisterMinset = async () => {
@@ -238,11 +283,28 @@ export default function Home() {
             </div>
           </button>
 
+          <div onClick={handleUploadImg} className="cursor-pointer w-8 h-8 bg-gray-500/20 flex items-center justify-center text-[10px] relative overflow-hidden rounded-full">
+            <Image 
+              src={profileImg || "/icons-agent-dashboard/profile.png"} 
+              alt={ "profile" } 
+              fill 
+              className="object-contain"
+            />
+          </div>
+
           <button type='button' className='text-[10px] uppercase tracking-[0.2em] cursor-pointer' onClick={()=>logoutUser("/")}>
             logout
           </button>
         </div>
       </header>
+
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={onFileChange} 
+        accept="image/*" 
+        className="hidden" 
+    />
 
       {/* --- Main Content Grid --- */}
       <main className="flex flex-col lg:flex-row gap-6 flex-1 relative z-10">

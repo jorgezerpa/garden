@@ -10,6 +10,22 @@ const client = axios.create({
   },
 });
 
+export const getProfileImg = async () => {
+  const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/upload/agent-profile`, {
+    ...getAuthHeader(),
+  });
+  return response.data;
+};
+
+export const uploadProfile = async (formData: FormData) => {
+  const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/upload/agent-profile`, formData, {
+    headers: {
+      ...getAuthHeader().headers,
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data; // Should return { url: "..." }
+};
 
 export const getAgentDayInsights = async (date: string) => {
   const response = await client.get('/get-agent-day-insights', {
