@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { useRouter } from 'next/navigation' // For redirect
-import { registerCompany, loginUser } from '@/apiHandlers/auth'
+import { registerCompany, loginUser, logoutUser } from '@/apiHandlers/auth'
+import jwt from 'jsonwebtoken';
 
 export default function ManagerAuth() {
   const router = useRouter()
@@ -21,12 +22,24 @@ export default function ManagerAuth() {
 
 
     useEffect(() => {
+      // if no token, stay
       const token = localStorage.getItem('jwt');
-      if (token) {
-        router.push('/manager/');
+      if(!token) return
+
+      // if token, get role
+      const decoded = jwt.decode(token) as any;
+      
+      // if role is not an admin or manager, redirect to sign in
+      if(!decoded.role || (decoded.role !== "MAIN_ADMIN" && decoded.role !== "MANAGER")) {
+        logoutUser("/manager/sign-in")
+        return 
       }
 
+      // if valid role, redirect to manager dashboard
+      router.push('/manager/');      
     }, [router]);
+
+    
 
   // Auto-hide toast after 4 seconds
   useEffect(() => {

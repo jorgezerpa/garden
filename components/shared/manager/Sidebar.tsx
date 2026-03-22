@@ -23,7 +23,7 @@ interface SidebarProps {
   onNavigate?: (id: string) => void;
 }
 
-const navItemsMainAdmin = [
+export const navItemsMainAdmin = [
   { id: 'managers-management', label: 'Managers Management', desc: 'Profile & Access Control of managers' },
   { id: 'agents-management', label: 'Agents Management', desc: 'Profile & Access Control of agents' },
   { id: 'agents-comparisson', label: 'Agents Comparison', desc: 'Rankings & Performance' },
@@ -36,7 +36,7 @@ const navItemsMainAdmin = [
   { id: 'api-keys', label: 'API Keys', desc: 'Generate key-pair for authentications' },
 ];
 
-const navItemsManager = [
+export const navItemsManager = [
   { id: 'agents-management', label: 'Agents Management', desc: 'Profile & Access Control of agents' },
   { id: 'agents-comparisson', label: 'Agents Comparison', desc: 'Rankings & Performance' },
   { id: 'goals-management', label: 'Goals Managements', desc: 'Create and assign goals' },

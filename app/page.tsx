@@ -1,8 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useTheme } from 'next-themes'
-import { loginUser } from '@/apiHandlers/auth'
+import { loginUser, logoutUser } from '@/apiHandlers/auth'
 import { useRouter } from 'next/navigation'
+import jwt from 'jsonwebtoken';
 
 export default function SignIn() {
   const router = useRouter()
@@ -15,6 +16,23 @@ export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => setMounted(true), [])
+
+  useEffect(() => {
+    // if no token, stay
+    const token = localStorage.getItem('jwt');
+    if(!token) return
+    // if token, get role
+    const decoded = jwt.decode(token) as any;
+    
+    // if role is not an agent, return 
+    if(!decoded.role || (decoded.role !== "AGENT")) {
+      logoutUser("/")
+      return 
+    }
+    // if valid role, redirect to manager dashboard
+    router.push('/agent-dashboard');      
+  }, [router]);
+  
 
   // Clear error when user retypes
   useEffect(() => {

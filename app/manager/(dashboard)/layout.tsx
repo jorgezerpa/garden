@@ -2,6 +2,9 @@
 import React, { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/shared/manager/Sidebar';
+import { logoutUser } from '@/apiHandlers/auth';
+import jwt from 'jsonwebtoken';
+import { navItemsManager } from '@/components/shared/manager/Sidebar';
 
 export default function AdminLayout({
   children,
@@ -13,7 +16,7 @@ export default function AdminLayout({
 
   // Extract the active item from the URL path
   // e.g., /admin/team-heatmap -> 'team-heatmap'
-  const activeItem = pathname.split('/').pop() || 'data-visualization';
+  const activeItem = pathname.split('/').pop() || 'long-term-data-visualization';
 
   const handleNavigation = (id: string) => {
     // This assumes your folder structure matches the IDs
@@ -23,9 +26,26 @@ export default function AdminLayout({
 
   useEffect(() => {
     const token = localStorage.getItem('jwt');
+    
+    // if no token, send to sign in manager
     if (!token) {
-      router.push('/manager/sign-in');
+      logoutUser("/manager/sign-in")
+      return 
     }
+
+    // if token, check role to be admin or manager
+    const decoded = jwt.decode(token) as any;
+    
+    if(!decoded.role || (decoded.role !== "MAIN_ADMIN" && decoded.role !== "MANAGER")) {
+      logoutUser("/manager/sign-in")
+      return 
+    }
+
+    // if is Manager, but is not an allowed route for him, redirect to main dashboard page
+    if(decoded.role == "MANAGER" && !navItemsManager.map(i => i.id).includes(pathname)) {
+      router.push("/manager");
+    }
+
   }, [router]);
 
   return (
