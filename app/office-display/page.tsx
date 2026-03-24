@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useTheme } from 'next-themes'
 import { getAgentsPositions } from '@/apiHandlers/officeDisplay';
-import { calculateMondayOfTheWeek, calculateSundayOfTheWeek, getCurrentDay } from '@/utils/Date';
+import { calculateMondayOfTheWeek, calculateSundayOfTheWeek, getCurrentDay, getUTCISOStringEndOfDay, getUTCISOStringStartOfDay } from '@/utils/Date';
 
 // 1. Updated Interface
 interface AgentData {
@@ -36,11 +36,11 @@ export default function OfficeDisplay() {
 
   useEffect(()=>{
     (async()=>{
-      const today = getCurrentDay()
+      const today = getCurrentDay() // yyyy-mm-dd
       const startOfTheWeek = calculateMondayOfTheWeek(today)
       const endOfTheWeek = calculateSundayOfTheWeek(today)
-      const responseToday =  await getAgentsPositions(today, today)
-      const responseWeek =  await getAgentsPositions(startOfTheWeek, endOfTheWeek)
+      const responseToday =  await getAgentsPositions(getUTCISOStringStartOfDay(today), getUTCISOStringEndOfDay(today))
+      const responseWeek =  await getAgentsPositions(getUTCISOStringStartOfDay(startOfTheWeek), getUTCISOStringEndOfDay(endOfTheWeek))
 
       setWeeklyData(responseWeek)      
       setDailyData(responseToday)

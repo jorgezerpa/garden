@@ -25,6 +25,7 @@ const visClient = axios.create({
  */
 
 // GET /api/datavis/general-insights
+// result is in UTC time
 export const getLastCallDate = async () => {
   const response = await visClient.get('/get-last-call-date', {
     ...getAuthHeader(),

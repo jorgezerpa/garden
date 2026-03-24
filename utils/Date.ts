@@ -54,3 +54,26 @@ export const getWeekDaysCardsData = (selectedDate: string): WeekDayTuple[] => {
 export const getCurrentDay = (): string => {
   return format(new Date(), 'yyyy-MM-dd');
 };
+
+
+/**
+ * Takes 'YYYY-MM-DD' and returns the UTC ISO string 
+ * for the start of that day in the LOCAL timezone.
+ * Example (UTC-4): '2024-05-20' -> '2024-05-20T04:00:00.000Z'
+ */
+export const getUTCISOStringStartOfDay = (yymmdd: string): string => {
+  // Parsing without 'Z' makes it local time
+  const localDate = new Date(`${yymmdd}T00:00:00`);
+  return localDate.toISOString();
+}
+
+/**
+ * Takes 'YYYY-MM-DD' and returns the UTC ISO string 
+ * for the end of that day in the LOCAL timezone.
+ * Example (UTC-4): '2024-05-20' -> '2024-05-21T03:59:59.999Z'
+ */
+export const getUTCISOStringEndOfDay = (yymmdd: string): string => {
+  // Parsing without 'Z' makes it local time
+  const localDate = new Date(`${yymmdd}T23:59:59.999`);
+  return localDate.toISOString();
+}

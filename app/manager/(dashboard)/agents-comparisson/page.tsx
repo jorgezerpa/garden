@@ -3,6 +3,7 @@ import { getAgentsComparison } from '@/apiHandlers/dataVis';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Spinner } from '@/components/Spinner';
 import { Toast } from '@/components/Toast';
+import { getUTCISOStringEndOfDay, getUTCISOStringStartOfDay } from '@/utils/Date';
 
 const initialLoading = {
   isFetchingTable: false,
@@ -24,7 +25,7 @@ export default function AgentsComparison() {
   const fetchComparison = useCallback(async () => {
     setLoading({ isFetchingTable: true });
     try {
-      const response = await getAgentsComparison(fromDate, toDate, { sortConfig, agents: [] });
+      const response = await getAgentsComparison(getUTCISOStringStartOfDay(fromDate), getUTCISOStringEndOfDay(toDate), { sortConfig, agents: [] });
       setSortedAgents(response);
     } catch (error) {
       setToastError("Failed to load performance ranking data.");

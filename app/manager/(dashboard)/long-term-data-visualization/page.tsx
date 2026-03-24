@@ -10,6 +10,7 @@ import { getAgentsList } from '@/apiHandlers/admin';
 import { getLastCallDate } from '@/apiHandlers/dataVis';
 import { GeneralInsights } from '@/components/manager/GeneralInsights';
 import { Spinner } from '@/components/Spinner';
+import { getUTCISOStringEndOfDay, getUTCISOStringStartOfDay } from '@/utils/Date';
 
 export default function AdminStats() {
   const [mounted, setMounted] = useState(false);
@@ -230,13 +231,13 @@ export default function AdminStats() {
         {
           (fromDate && toDate) && (
             <>
-              <GeneralInsights fromDate={fromDate} toDate={toDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
-              <DailyActivityLineCharts fromDate={fromDate} toDate={toDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
-              <PerBlockBarChart fromDate={fromDate} toDate={toDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} /> 
-              <CallDurationHistogram fromDate={fromDate} toDate={toDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
-              <SeedHeatmap fromDate={fromDate} toDate={toDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
-              <ConversionFunnelChart fromDate={fromDate} toDate={toDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
-              <ConsistencyGraph fromDate={fromDate} toDate={toDate} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+              <GeneralInsights fromDate={getUTCISOStringStartOfDay(fromDate)} toDate={getUTCISOStringEndOfDay(toDate)} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+              <DailyActivityLineCharts fromDate={getUTCISOStringStartOfDay(fromDate)} toDate={getUTCISOStringEndOfDay(toDate)} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+              <PerBlockBarChart fromDate={getUTCISOStringStartOfDay(fromDate)} toDate={getUTCISOStringEndOfDay(toDate)} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} /> 
+              <CallDurationHistogram fromDate={getUTCISOStringStartOfDay(fromDate)} toDate={getUTCISOStringEndOfDay(toDate)} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+              <SeedHeatmap fromDate={getUTCISOStringStartOfDay(fromDate)} toDate={getUTCISOStringEndOfDay(toDate)} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+              <ConversionFunnelChart fromDate={getUTCISOStringStartOfDay(fromDate)} toDate={getUTCISOStringEndOfDay(toDate)} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
+              <ConsistencyGraph fromDate={getUTCISOStringStartOfDay(fromDate)} toDate={getUTCISOStringEndOfDay(toDate)} triggerPerAgentSearch={triggerPerAgentSearch} agentsSelected={agentsSelected} />
             </>
           )
         }
