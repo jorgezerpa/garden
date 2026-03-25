@@ -1,79 +1,66 @@
 import { startOfWeek, endOfWeek, format, parseISO, eachDayOfInterval, getMonth, getDate } from 'date-fns';
+import { formatInTimeZone, toDate } from 'date-fns-tz';
+
+const IANA = "Europe/Amsterdam";
 
 /**
- * Calculates the Monday of the week for a given date.
- * @param baseDate - ISO string or Date object
- * @returns string formatted as 'yyyy-MM-dd'
+ * Helper to ensure a date is treated as being in the target IANA zone.
  */
-export const calculateMondayOfTheWeek = (baseDate: string | Date): string => {
-  const date = typeof baseDate === 'string' ? parseISO(baseDate) : baseDate;
-  
-  // weekStartsOn: 1 ensures Monday is the first day of the week
-  const monday = startOfWeek(date, { weekStartsOn: 1 });
-  
-  return format(monday, 'yyyy-MM-dd');
+const getZonedDate = (baseDate: string | Date): Date => {
+  return toDate(baseDate, { timeZone: IANA });
 };
 
-/**
- * Calculates the Sunday of the week for a given date.
- * @param baseDate - ISO string or Date object
- * @returns string formatted as 'yyyy-MM-dd'
- */
-export const calculateSundayOfTheWeek = (baseDate: string | Date): string => {
-  const date = typeof baseDate === 'string' ? parseISO(baseDate) : baseDate;
+export const calculateMondayOfTheWeek = (baseDate: string | Date): string => {
+  const zonedDate = getZonedDate(baseDate);
+  const monday = startOfWeek(zonedDate, { weekStartsOn: 1 });
   
-  // We calculate Sunday based on the Monday of that week to be safe
-  const monday = startOfWeek(date, { weekStartsOn: 1 });
+  // Use formatInTimeZone to ensure the string representation matches Amsterdam
+  return formatInTimeZone(monday, IANA, 'yyyy-MM-dd');
+};
+
+export const calculateSundayOfTheWeek = (baseDate: string | Date): string => {
+  const zonedDate = getZonedDate(baseDate);
+  const monday = startOfWeek(zonedDate, { weekStartsOn: 1 });
   const sunday = endOfWeek(monday, { weekStartsOn: 1 });
   
-  return format(sunday, 'yyyy-MM-dd');
+  return formatInTimeZone(sunday, IANA, 'yyyy-MM-dd');
 };
 
-
-// Define a type for the subarray: [ISO Date, Month, Day, DayName]
 export type WeekDayTuple = [string, number, number, string];
 
 export const getWeekDaysCardsData = (selectedDate: string): WeekDayTuple[] => {
-  // parseISO treats '2023-10-23' as a local date, avoiding the UTC shift bug
-  const baseDate = parseISO(selectedDate);
-  
-  // Ensure we start the week on Monday (1)
-  const monday = startOfWeek(baseDate, { weekStartsOn: 1 });
+  const zonedDate = getZonedDate(selectedDate);
+  const monday = startOfWeek(zonedDate, { weekStartsOn: 1 });
   const sunday = endOfWeek(monday, { weekStartsOn: 1 });
 
   const days = eachDayOfInterval({ start: monday, end: sunday });
 
   return days.map((day): WeekDayTuple => [
-    format(day, 'yyyy-MM-dd'),         // "2023-10-23"
-    getMonth(day) + 1,                // 10 (Human readable month)
-    getDate(day),                     // 23
-    format(day, 'eee').toLowerCase(), // "mon"
+    formatInTimeZone(day, IANA, 'yyyy-MM-dd'),
+    getMonth(day) + 1,
+    getDate(day),
+    formatInTimeZone(day, IANA, 'eee').toLowerCase(),
   ]);
 };
 
 export const getCurrentDay = (): string => {
-  return format(new Date(), 'yyyy-MM-dd');
+  return formatInTimeZone(new Date(), IANA, 'yyyy-MM-dd');
 };
 
-
 /**
- * Takes 'YYYY-MM-DD' and returns the UTC ISO string 
- * for the start of that day in the LOCAL timezone.
- * Example (UTC-4): '2024-05-20' -> '2024-05-20T04:00:00.000Z'
+ * Returns the UTC ISO string for the start of the day in Amsterdam.
+ * If IANA is UTC+1, '2024-05-20' -> '2024-05-19T23:00:00.000Z'
  */
 export const getUTCISOStringStartOfDay = (yymmdd: string): string => {
-  // Parsing without 'Z' makes it local time
-  const localDate = new Date(`${yymmdd}T00:00:00`);
-  return localDate.toISOString();
+  // We tell toDate: "This string represents midnight in Amsterdam"
+  const zonedDate = toDate(`${yymmdd}T00:00:00`, { timeZone: IANA });
+  return zonedDate.toISOString(); 
 }
 
 /**
- * Takes 'YYYY-MM-DD' and returns the UTC ISO string 
- * for the end of that day in the LOCAL timezone.
- * Example (UTC-4): '2024-05-20' -> '2024-05-21T03:59:59.999Z'
+ * Returns the UTC ISO string for the end of the day in Amsterdam.
  */
 export const getUTCISOStringEndOfDay = (yymmdd: string): string => {
-  // Parsing without 'Z' makes it local time
-  const localDate = new Date(`${yymmdd}T23:59:59.999`);
-  return localDate.toISOString();
+  const zonedDate = toDate(`${yymmdd}T23:59:59.999`, { timeZone: IANA });
+  return zonedDate.toISOString();
 }
