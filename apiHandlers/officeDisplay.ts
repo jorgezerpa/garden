@@ -16,6 +16,15 @@ export const getAgentsPositions = async (from: string, to: string) => {
   return response.data?.data || []
 };
 
+// GET /api/datavis/get-agents-comparisson
+export const getTeamHeat = async (yymmdd:string) => {
+  const response = await officeDisplayClient.get('/get_team_heat', {
+    ...getAuthHeader(),
+    params: { date:yymmdd },
+  });
+  return response.data
+};
+
 
 ///////////////////
 ///////////////////
