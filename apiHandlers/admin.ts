@@ -43,6 +43,16 @@ export interface UpdateAgentData {
   leadDeskId?: string
 }
 
+export const saveLeadDeskEventsIds = async (seedEventIds: string[], saleEventIds: string[]) => {
+  const response = await adminClient.post('/upsertLeadDeskEventIds', { seedEventIds, saleEventIds },getAuthHeader());
+  return response.data;
+}
+;
+export const getLeadDeskEventsIds = async () => {
+  const response = await adminClient.get('/getLeadDeskEventIds',getAuthHeader());
+  return response.data;
+};
+
 export const saveLeadDeskAuthString = async (authString: string) => {
   const response = await adminClient.post('/upsertLeadDeskAPIAuthString', { authString },getAuthHeader());
   return response.data;
