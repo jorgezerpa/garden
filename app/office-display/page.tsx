@@ -100,7 +100,6 @@ export default function OfficeDisplay() {
 
   return (
     <div className={`min-h-screen w-full ${bgMain} ${textMain} p-8 font-sans transition-colors duration-300`}>
-      { theme }
       <div className="max-w-[1600px] mx-auto grid grid-cols-12 gap-8 h-full">
         
         {/* LEFT COLUMN: WEEKLY */}
