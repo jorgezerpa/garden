@@ -122,12 +122,6 @@ export default function Home() {
 
     // 1. Run immediately on mount
     fetchData(false);
-
-    // 2. Set up the 20-second interval
-    const intervalId = setInterval(() => fetchData(true), 20000);
-
-    // 3. Clean up on unmount
-    return () => clearInterval(intervalId);
   }, []); 
 
   useEffect(()=>{
@@ -136,6 +130,33 @@ export default function Home() {
       setProfileImg(result?.url||null)
     })()
   }, [])
+
+  useEffect(() => {
+    // Get token from localStorage just like in your Axios utility
+    const token = localStorage.getItem('jwt');
+    
+    if (!token) return;
+
+    // Append both the screen AND the token to the URL
+    const url = `http://localhost:3001/api/events?screen=office-display&token=${token}`;
+
+    const es = new EventSource(url);
+
+    es.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log("Ra")
+      if (data.type === 'WEBHOOK_TRIGGERED') {
+        console.log("webhook trigeeeerrredd")
+      }
+    };
+
+    es.onerror = (err) => {
+      console.error("SSE Connection Error. Check if token is valid.");
+      es.close();
+    };
+
+    return () => es.close();
+  }, []);
 
 
   
