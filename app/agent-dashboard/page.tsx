@@ -83,7 +83,43 @@ export default function Home() {
 
   useEffect(() => setMounted(true), [])
   
+  useEffect(()=>{
+    (async()=>{
+      const result = await getProfileImg()
+      setProfileImg(result?.url||null)
+    })()
+  }, [])
+
   useEffect(() => {
+    // Initial data fetching 
+    fetchData(false);
+
+    // Get token from localStorage just like in your Axios utility
+    const token = localStorage.getItem('jwt');
+    
+    if (!token) return;
+
+    // Append both the screen AND the token to the URL
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/api/events?screen=agent-dashboard&token=${token}`;
+
+    const es = new EventSource(url);
+
+    es.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'WEBHOOK_TRIGGERED') {
+        fetchData(true);
+      }
+    };
+
+    es.onerror = (err) => {
+      console.error("SSE Connection Error. Check if token is valid.");
+      es.close();
+    };
+
+    return () => es.close();
+  }, []);
+
+
     const fetchData = async (isBackgroundUpdate = false) => {
       if (!isBackgroundUpdate) setIsLoading(true);
       
@@ -119,44 +155,6 @@ export default function Home() {
         if (!isBackgroundUpdate) setIsLoading(false);
       }
     };
-
-    // 1. Run immediately on mount
-    fetchData(false);
-  }, []); 
-
-  useEffect(()=>{
-    (async()=>{
-      const result = await getProfileImg()
-      setProfileImg(result?.url||null)
-    })()
-  }, [])
-
-  useEffect(() => {
-    // Get token from localStorage just like in your Axios utility
-    const token = localStorage.getItem('jwt');
-    
-    if (!token) return;
-
-    // Append both the screen AND the token to the URL
-    const url = `http://localhost:3001/api/events?screen=office-display&token=${token}`;
-
-    const es = new EventSource(url);
-
-    es.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log("Ra")
-      if (data.type === 'WEBHOOK_TRIGGERED') {
-        console.log("webhook trigeeeerrredd")
-      }
-    };
-
-    es.onerror = (err) => {
-      console.error("SSE Connection Error. Check if token is valid.");
-      es.close();
-    };
-
-    return () => es.close();
-  }, []);
 
 
   
