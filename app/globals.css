@@ -28,3 +28,34 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* In your index.css or a CSS module */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 0.2px; /* Adjust this for thickness */
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent; 
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #eee; /* Color of the scroll bar */
+  border-radius: 20px;    /* Makes it rounded */
+}
+
+.thin-scrollbar-dark::-webkit-scrollbar-thumb {
+  background-color: #222; /* Color of the scroll bar */
+  border-radius: 20px;    /* Makes it rounded */
+}
+
+/* For Firefox */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #eee transparent;
+}
+
+/* For Firefox */
+.thin-scrollbar-dark {
+  scrollbar-width: thin;
+  scrollbar-color: #222 transparent;
+}

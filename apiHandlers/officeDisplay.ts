@@ -11,7 +11,7 @@ const officeDisplayClient = axios.create({
 export const getAgentsPositions = async (from: string, to: string) => {
   const response = await officeDisplayClient.get('/get_agents_positions', {
     ...getAuthHeader(),
-    params: { from, to },
+    params: { from, to, page:1, pageSize:50 },
   });
   return response.data?.data || []
 };

@@ -64,3 +64,24 @@ export const getUTCISOStringEndOfDay = (yymmdd: string): string => {
   const zonedDate = toDate(`${yymmdd}T23:59:59.999`, { timeZone: IANA });
   return zonedDate.toISOString();
 }
+
+/**
+ * Converts minutes into a "00h 00m" formatted string.
+ * @param totalMinutes - The total duration in minutes
+ * @returns Formatted string (e.g., "02h 15m")
+ */
+export const formatMinutes = (totalMinutes: number): string => {
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+
+  // .padStart(2, '0') ensures we always have two digits (e.g., "05" instead of "5")
+  const paddedHours = String(hours).padStart(2, '0');
+  const paddedMins = String(mins).padStart(2, '0');
+
+  return `${paddedHours}h ${paddedMins}m`;
+};
+
+// Examples:
+// console.log(formatMinutes(135)); // "02h 15m"
+// console.log(formatMinutes(45));  // "00h 45m"
+// console.log(formatMinutes(600)); // "10h 00m"
