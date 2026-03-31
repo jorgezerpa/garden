@@ -54,6 +54,12 @@ export default function OfficeDisplay() {
     es.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'WEBHOOK_TRIGGERED') {
+        let event:EventData["type"] | null = null
+        if(data.performanceNotifications.seed) event = "seed"
+        if(data.performanceNotifications.sale) event = "sale"
+        if(data.performanceNotifications.onFire) event = "onFire"
+
+        if(event) triggerEvent(data.agentName, event);
         fetchData();
       }
     };
@@ -341,16 +347,13 @@ const HeatMeter: React.FC<HeatMeterProps> = ({ score, isDark }) => {
 
 interface EventData {
   agentName: string;
-  type: 'fire' | 'streak' | 'big_deal' | 'level_up' | 'first_sale' | 'target_hit';
+  type: 'onFire' | 'seed' | 'sale';
 }
 
 const EVENT_CONFIG = {
-  fire: { icon: '🔥', text: 'IS ON FIRE!', color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500' },
-  streak: { icon: '⚡', text: 'STREAKING!', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400' },
-  big_deal: { icon: '💰', text: 'BIG DEAL!', color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-green-500' },
-  level_up: { icon: '🆙', text: 'LEVEL UP!', color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500' },
-  first_sale: { icon: '🌱', text: 'FIRST SEED!', color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400' },
-  target_hit: { icon: '🎯', text: 'TARGET HIT!', color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-500' },
+  onFire: { icon: '🔥', text: 'IS ON FIRE!', color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500' },
+  seed: { icon: '🌱', text: 'MADE A NEW SEED!', color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500' },
+  sale: { icon: '💰', text: 'PERFORMED A SALE!', color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500' },
 };
 
 function EventNotification({ event, isDark }: { event: EventData; isDark: boolean }) {
