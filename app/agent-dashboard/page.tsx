@@ -463,7 +463,7 @@ const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
                       {isLoading ? (
                         <Skeleton className="w-10 h-6 mx-auto" />
                       ) : (
-                        <span className="text-lg font-bold tracking-tight text-slate-700 dark:text-white">{agentInsights[item.currentValueKey]}/{ agentInsights[item.goalKey] }</span>
+                        <span className="text-lg font-bold tracking-tight text-slate-700 dark:text-white">{(item.currentValueKey=="talkTime"? toMinutes(agentInsights[item.currentValueKey]) :agentInsights[item.currentValueKey])}/{ agentInsights[item.goalKey] }</span>
                       )}
                     </div>
                   </div>
@@ -788,3 +788,13 @@ const CallBlock = ({ time, status }: CallBlockProps) => {
     </div>
   );
 };
+
+
+
+function toMinutes(n: number):number {
+  try {
+    return parseInt(Number(n/60).toString())
+  } catch (error) {
+    return 0
+  }
+}
