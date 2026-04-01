@@ -1,8 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { addAgent, editAgent, getAgentsList, removeAgent } from '@/apiHandlers/admin';
+import { addAgent, editAgent, getAgentDetails, getAgentsList, removeAgent, updateAgentsLevel } from '@/apiHandlers/admin';
 import { Spinner } from '@/components/Spinner';
 import { Toast } from '@/components/Toast';
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, 
+  Tooltip, ResponsiveContainer 
+} from 'recharts';
+import { getCurrentDay, getUTCISOStringEndOfDay, getUTCISOStringStartOfDay } from '@/utils/Date';
 
 interface Agent {
   id: number;
@@ -14,11 +19,34 @@ interface Agent {
   agentToThird: { agentServiceIdentifier: number | string }[];
 }
 
+interface AgentDetails {
+  level: 'gold' | "silver" | "bronze"
+  stats: {
+    seeds: number,
+    leads: number,
+    sales: number,
+    calls: number,
+    deepCalls: number,
+  },
+  tenure: {
+    goldWeeks: number,
+    silverWeeks: number,
+    bronzeWeeks: number,
+  }
+}
+
 const initialLoading = {
   isCreating: false,
   isUpdating: false,
   isDeleting: false,
   isFetchingAgents: false,
+  updatingAgentLevel: false
+};
+
+const formatWeeksToDays = (decimalWeeks: number) => {
+  const weeks = Math.floor(decimalWeeks);
+  const days = Math.round((decimalWeeks - weeks) * 7);
+  return `${weeks} weeks - ${days} days`;
 };
 
 export default function AgentsManagement() {
@@ -34,6 +62,8 @@ export default function AgentsManagement() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newAgent, setNewAgent] = useState({ name: '', email: '', password: '', leadDeskId: '' });
   const [updatingInputs, setUpdatingInputs] = useState({ name: '', email: '', password: '', leadDeskId: '' });
+
+  const [currentAgentDetails, setCurrentAgentDetails] = useState<AgentDetails|null>(null);
 
   const fetchAgents = async () => {
     setLoading((prev) => ({ ...prev, isFetchingAgents: true }));
@@ -51,8 +81,22 @@ export default function AgentsManagement() {
     fetchAgents();
   }, []);
 
+  useEffect(()=>{
+    (async()=>{
+      try {
+        if(expanded.mode == "details" && expanded.id) {
+          const result = await getAgentDetails(expanded.id, getUTCISOStringStartOfDay("1972-01-01"), getUTCISOStringEndOfDay(getCurrentDay()))
+          setCurrentAgentDetails(result)
+        }
+      } catch (error) {
+        setCurrentAgentDetails(null)
+        setToastError("Failed to fetch agent details.")
+      }
+    })()
+  }, [expanded])
+
   const toggleExpand = (id: number, mode: 'details' | 'modify', agent?: Agent) => {
-    if (expanded.id === id && expanded.mode === mode) {
+    if (expanded.id === id && expanded.mode === mode) { // close if open 
       setExpanded({ id: null, mode: null });
       setUpdatingInputs({ email: '', name: '', password: '', leadDeskId: '' });
     } else {
@@ -116,6 +160,19 @@ export default function AgentsManagement() {
       setLoading((prev) => ({ ...prev, isUpdating: false }));
     }
   };
+  
+  const handleUpdateAgentsLevel = async() => {
+    try {
+      setLoading((prev) => ({ ...prev, updatingAgentLevel: true }));
+      await updateAgentsLevel()
+    } catch (error) {
+      setToastError("Failed to update agents level.");
+    }
+    finally {
+      setLoading((prev) => ({ ...prev, updatingAgentLevel: false }));
+    }
+
+  }
 
   return (
     <div className="space-y-8 pb-20 font-sans">
@@ -123,12 +180,20 @@ export default function AgentsManagement() {
       {toastError && <Toast message={toastError} onClose={() => setToastError(null)} />}
 
       <div className="flex flex-col items-center">
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="px-8 py-3 bg-green-500 hover:bg-green-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all shadow-lg shadow-green-500/20"
-        >
-          {showAddForm ? 'Cancel New Agent' : 'Add Agent'}
-        </button>
+        <div className='flex w-full justify-between items-center'>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="px-8 py-3 bg-green-500 hover:bg-green-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all shadow-lg shadow-green-500/20"
+          >
+            {showAddForm ? 'Cancel New Agent' : 'Add Agent'}
+          </button>
+          <button
+            onClick={handleUpdateAgentsLevel}
+            className="px-8 py-3 bg-green-500 hover:bg-green-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all shadow-lg shadow-green-500/20"
+          >
+            {loading.updatingAgentLevel ? <><Spinner size="w-3 h-3" color="text-green-500" /> Processing...</> : 'Update Agent Level'}
+          </button>
+        </div>
 
         {showAddForm && (
           <div className="w-full mt-6 bg-white dark:bg-[#1e2330] border border-green-500/30 rounded-[2rem] p-8 animate-in fade-in slide-in-from-top-2 duration-300 shadow-xl">
@@ -169,13 +234,83 @@ export default function AgentsManagement() {
                     <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">{agent.user.email}</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => toggleExpand(agent.id, 'modify', agent)}
-                  className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${expanded.id === agent.id && expanded.mode === 'modify' ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300'}`}
-                >
-                  Modify User
-                </button>
+                <div className='flex gap-1 justify-end items-center'>
+                  <button
+                    onClick={() => toggleExpand(agent.id, 'details')}
+                    className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${expanded.id === agent.id && expanded.mode === 'details' ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300'}`}
+                  >
+                    See details
+                  </button>
+                  <button
+                    onClick={() => toggleExpand(agent.id, 'modify', agent)}
+                    className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${expanded.id === agent.id && expanded.mode === 'modify' ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300'}`}
+                  >
+                    Modify Agent
+                  </button>
+                </div>
               </div>
+
+
+              {(expanded.id === agent.id && expanded.mode === 'details' && currentAgentDetails) && (
+                <div className="px-6 pb-8 pt-4 border-t border-slate-100 dark:border-white/5 animate-in fade-in slide-in-from-top-1">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    
+                    {/* Column 1: Level & Tenure */}
+                    <div className="p-6 bg-slate-50 dark:bg-white/5 rounded-[2rem] border border-slate-200 dark:border-white/10 flex flex-col justify-between">
+                      <div>
+                        <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Current Status</h5>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-3 h-3 rounded-full animate-pulse ${
+                            currentAgentDetails.level === 'gold' ? 'bg-amber-400' : 
+                            currentAgentDetails.level === 'silver' ? 'bg-slate-300' : 'bg-orange-500'
+                          }`} />
+                          <span className="text-xl font-black uppercase dark:text-white">{currentAgentDetails.level} Level</span>
+                        </div>
+                      </div>
+
+                      <div className="mt-8 space-y-3">
+                        <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Time in State</h5>
+                        <div className="space-y-2">
+                          {[
+                            { label: 'Gold', val: currentAgentDetails.tenure.goldWeeks, color: 'text-amber-500' },
+                            { label: 'Silver', val: currentAgentDetails.tenure.silverWeeks, color: 'text-slate-400' },
+                            { label: 'Bronze', val: currentAgentDetails.tenure.bronzeWeeks, color: 'text-orange-600' }
+                          ].map((t) => (
+                            <div key={t.label} className="flex justify-between items-center bg-white dark:bg-black/20 p-3 rounded-xl border border-slate-100 dark:border-white/5">
+                              <span className={`text-[10px] font-black uppercase ${t.color}`}>{t.label}</span>
+                              <span className="text-[10px] font-bold dark:text-gray-300">{formatWeeksToDays(t.val)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Column 2: Stats Grid */}
+                    <div className="p-6 bg-slate-50 dark:bg-white/5 rounded-[2rem] border border-slate-200 dark:border-white/10">
+                      <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Performance Metrics</h5>
+                      <div className="grid grid-cols-2 gap-4">
+                        {[
+                          { label: 'Seeds', value: currentAgentDetails.stats.seeds },
+                          { label: 'Leads', value: currentAgentDetails.stats.leads },
+                          { label: 'Sales', value: currentAgentDetails.stats.sales },
+                          { label: 'Total Calls', value: currentAgentDetails.stats.calls },
+                        ].map((stat) => (
+                          <div key={stat.label} className="bg-white dark:bg-black/20 p-4 rounded-2xl border border-slate-100 dark:border-white/5">
+                            <p className="text-[9px] font-black text-slate-400 uppercase leading-none mb-2">{stat.label}</p>
+                            <p className="text-xl font-black dark:text-white">{stat.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 bg-green-500/10 p-4 rounded-2xl border border-green-500/20">
+                        <p className="text-[9px] font-black text-green-600 dark:text-green-400 uppercase mb-1">Deep Calls</p>
+                        <p className="text-2xl font-black text-green-600 dark:text-green-400">{currentAgentDetails.stats.deepCalls}</p>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
 
               {expanded.id === agent.id && expanded.mode === 'modify' && (
                 <div className="px-6 pb-8 pt-4 border-t border-slate-100 dark:border-white/5">

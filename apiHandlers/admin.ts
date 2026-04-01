@@ -43,6 +43,11 @@ export interface UpdateAgentData {
   leadDeskId?: string
 }
 
+export const updateAgentsLevel = async () => {
+  const response = await adminClient.post(`/updateAgentsLevel`, {}, getAuthHeader());
+  return response.data;
+};
+
 export const saveLeadDeskEventsIds = async (seedEventIds: string[], saleEventIds: string[]) => {
   const response = await adminClient.post('/upsertLeadDeskEventIds', { seedEventIds, saleEventIds },getAuthHeader());
   return response.data;
@@ -108,6 +113,14 @@ export const editAgent = async (id: number, data: UpdateAgentData) => {
 
 export const getAgent = async (id: number) => {
   const response = await adminClient.get(`/getAgent/${id}`, getAuthHeader());
+  return response.data;
+};
+
+export const getAgentDetails = async (id: number, from: string, to: string) => {
+  const response = await adminClient.get(`/getAgentDetails?agentId=${id}`, {
+    ...getAuthHeader(),
+    params: { from, to },
+  });
   return response.data;
 };
 
