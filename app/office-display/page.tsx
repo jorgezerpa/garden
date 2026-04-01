@@ -99,26 +99,53 @@ export default function OfficeDisplay() {
     dataRef.current = dailyData;
   }, [dailyData]);
 
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     // 3. Always access data from the ref to avoid stale closures
+  //     const currentData = dataRef.current;
+      
+  //     if (currentData && currentData.length > 0) {
+  //       const lastAgent = currentData[currentData.length - 1];
+        
+  //       setActiveEvent({ 
+  //         agentName: lastAgent.name, 
+  //         agentImg: lastAgent.profileImg || null, 
+  //         type: "stoned" 
+  //       });
+  //       setShowEvent(true)
+  //     }
+  //   }, 10000);
+
+  //   // 4. IMPORTANT: The Cleanup Function
+  //   return () => clearInterval(interval);
+  // }, []); 
+
   useEffect(() => {
     const interval = setInterval(() => {
       // 3. Always access data from the ref to avoid stale closures
       const currentData = dataRef.current;
       
       if (currentData && currentData.length > 0) {
-        const lastAgent = currentData[currentData.length - 1];
+        const eventTypes: EventData['type'][] = ["onFire", "seed", "sale", "stoned"];
+
+        // 1. Pick a random agent from your state
+        const randomAgent = currentData[Math.floor(Math.random() * currentData.length)];
         
-        setActiveEvent({ 
-          agentName: lastAgent.name, 
-          agentImg: lastAgent.profileImg || null, 
-          type: "stoned" 
-        });
-        setShowEvent(true)
+        // 2. Pick a random event type
+        const randomType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+
+        // 3. Trigger the animation
+        if (randomAgent) {
+          triggerEvent(randomAgent.name, randomType, randomAgent.profileImg || null);
+        }
+
       }
-    }, 120000);
+
+    }, 10000);
 
     // 4. IMPORTANT: The Cleanup Function
     return () => clearInterval(interval);
-  }, []); // Empty dependency array so the interval only starts ONCE
+  }, []); 
 
   const fetchData = async() => { 
     try {
@@ -137,32 +164,6 @@ export default function OfficeDisplay() {
       setTeamHeat(0)
     }
   }
-
-  // // PROVICIONAL FOR TESTING NOTIFICATIONS 
-  // useeEffect(() => {
-  //   // Only run simulation if we have agents to show
-  //   if (dailyData.length === 0) return;
-
-  //   const eventTypes: EventData['type'][] = [
-  //     'fire', 'streak', 'big_deal', 'level_up', 'first_sale', 'target_hit'
-  //   ];
-
-  //   const interval = setInterval(() => {
-  //     // 1. Pick a random agent from your state
-  //     const randomAgent = dailyData[Math.floor(Math.random() * dailyData.length)];
-      
-  //     // 2. Pick a random event type
-  //     const randomType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
-
-  //     // 3. Trigger the animation
-  //     if (randomAgent) {
-  //       triggerEvent(randomAgent.name, randomType);
-  //     }
-  //   }, 10000); // Runs every 10 seconds
-
-  //   return () => clearInterval(interval);
-  // }, [dailyData]); // Re-run if dailyData updates
-
 
 
   return (
