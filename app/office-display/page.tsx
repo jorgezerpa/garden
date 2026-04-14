@@ -7,6 +7,7 @@ import { getAgentsPositions, getTeamHeat } from '@/apiHandlers/officeDisplay';
 import { calculateMondayOfTheWeek, calculateSundayOfTheWeek, formatMinutes, getCurrentDay, getUTCISOStringEndOfDay, getUTCISOStringStartOfDay } from '@/utils/Date';
 import { FaArrowDown, FaArrowUp, FaEquals } from 'react-icons/fa';
 import { GoDotFill } from 'react-icons/go';
+import { motion } from 'framer-motion';
 
 // 1. Updated Interface
 interface AgentData {
@@ -60,6 +61,7 @@ export default function OfficeDisplay() {
     es.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'WEBHOOK_TRIGGERED') {
+        console.log("a")
         let event:EventData["type"] | null = null
         if(data.performanceNotifications.seed) event = "seed"
         if(data.performanceNotifications.sale) event = "sale"
@@ -102,53 +104,34 @@ export default function OfficeDisplay() {
     dataRef.current = dailyData;
   }, [dailyData]);
 
+
+  // MOCK EVENTS SHOWING -> comment on PRD 
   // useEffect(() => {
   //   const interval = setInterval(() => {
   //     // 3. Always access data from the ref to avoid stale closures
   //     const currentData = dataRef.current;
       
   //     if (currentData && currentData.length > 0) {
-  //       const lastAgent = currentData[currentData.length - 1];
+  //       const eventTypes: EventData['type'][] = ["onFire", "seed", "sale", "stoned"];
+
+  //       // 1. Pick a random agent from your state
+  //       const randomAgent = currentData[Math.floor(Math.random() * currentData.length)];
         
-  //       setActiveEvent({ 
-  //         agentName: lastAgent.name, 
-  //         agentImg: lastAgent.profileImg || null, 
-  //         type: "stoned" 
-  //       });
-  //       setShowEvent(true)
+  //       // 2. Pick a random event type
+  //       const randomType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+
+  //       // 3. Trigger the animation
+  //       if (randomAgent) {
+  //         triggerEvent(randomAgent.name, randomType, randomAgent.profileImg || null);
+  //       }
+
   //     }
+
   //   }, 10000);
 
   //   // 4. IMPORTANT: The Cleanup Function
   //   return () => clearInterval(interval);
   // }, []); 
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // 3. Always access data from the ref to avoid stale closures
-      const currentData = dataRef.current;
-      
-      if (currentData && currentData.length > 0) {
-        const eventTypes: EventData['type'][] = ["onFire", "seed", "sale", "stoned"];
-
-        // 1. Pick a random agent from your state
-        const randomAgent = currentData[Math.floor(Math.random() * currentData.length)];
-        
-        // 2. Pick a random event type
-        const randomType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
-
-        // 3. Trigger the animation
-        if (randomAgent) {
-          triggerEvent(randomAgent.name, randomType, randomAgent.profileImg || null);
-        }
-
-      }
-
-    }, 10000);
-
-    // 4. IMPORTANT: The Cleanup Function
-    return () => clearInterval(interval);
-  }, []); 
 
   const fetchData = async() => { 
     try {
@@ -180,7 +163,7 @@ export default function OfficeDisplay() {
             <HeaderRow />
             <div className={`max-h-[80vh] overflow-y-scroll ${theme=="dark" ? "thin-scrollbar-dark" : "thin-scrollbar"}`}>
               {weeklyData.map((agent,i) => (
-                <AgentRow key={agent.name+"weeklyy"+i} agent={agent} isDark={theme === 'dark'} index={i} />
+                <AgentRow key={`weekly-${agent.id}`} agent={agent} isDark={theme === 'dark'} index={i} />
               ))}
             </div>
           </div>
@@ -211,7 +194,7 @@ export default function OfficeDisplay() {
             <HeaderRow />
             <div className={`max-h-[80vh] overflow-y-scroll ${theme=="dark" ? "thin-scrollbar-dark" : "thin-scrollbar"}`}>
               {dailyData.map((agent, i) => (
-                <AgentRow key={agent.name+"dailyyy"+i} agent={agent} isDark={theme === 'dark'} isDaily index={i} />
+                <AgentRow key={`daily-${agent.id}`} agent={agent} isDark={theme === 'dark'} isDaily index={i} />
               ))}
             </div>
           </div>
@@ -303,54 +286,65 @@ function AgentRow({ agent, isDark, index, isDaily }: { agent: AgentData, isDark:
   };
 
   return (
-    <>
-      <div className={`grid grid-cols-[40px_40px_1fr_90px_45px_45px] items-center border ${borderColor} ${rowBg} rounded-lg overflow-hidden h-10 transition-colors`}>
-        <div className={`pl-1 h-full flex items-center font-bold text-sm truncate border-r border-l ${borderColor}`}>
-          {(isDaily && agent.direction === "asc") && <FaArrowUp size={12} color='#0f0' />}
-          {(isDaily && agent.direction === "desc") && <FaArrowDown size={12} color='#f00'/>}
-          {(isDaily && agent.direction === "static") && <GoDotFill size={12} color={isDark?'#fff':"#000"}/>}
-          {index+1}
-        </div>
+    // Replaced the empty fragment with motion.div
+    <motion.div 
+      layout // 🪄 This single prop tells Framer Motion to animate positional changes
+      initial={{ opacity: 0, scale: 0.9 }} // Optional: Animation when they first appear on the board
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ 
+        type: "spring", 
+        // stiffness: 350, 
+        // damping: 25 // Adjust these to make the movement more bouncy or rigid
+        stiffness: 200, // Lower is slower (default is around 500)
+        damping: 10     // Higher means less bounce/wobble
+      }}
+      className={`grid grid-cols-[40px_40px_1fr_90px_45px_45px] items-center border ${borderColor} ${rowBg} rounded-lg overflow-hidden h-10 transition-colors`}
+    >
+      <div className={`pl-1 h-full flex items-center font-bold text-sm truncate border-r border-l ${borderColor}`}>
+        {(isDaily && agent.direction === "asc") && <FaArrowUp size={12} color='#0f0' />}
+        {(isDaily && agent.direction === "desc") && <FaArrowDown size={12} color='#f00'/>}
+        {(isDaily && agent.direction === "static") && <GoDotFill size={12} color={isDark?'#fff':"#000"}/>}
+        {index+1}
+      </div>
         
-        <div className="flex justify-center items-center">
-          <div className={`w-8 h-8 bg-gray-500/20 rounded-full flex items-center justify-center text-[10px] relative overflow-hidden`}>
-            <Image 
-              src={agent.profileImg || "/icons-agent-dashboard/profile.png"} 
-              alt={ agent.name } 
-              fill 
-              className="object-contain"
-            />
-          </div>
-        </div>
-
-        {/* Name remains clean */}
-        <div className={`h-full flex items-center justify-between px-3 truncate border-r border-l ${borderColor} ${getLevelColor(agent.currentLevel, isDark)}`}>
-          <span className='font-semibold text-[18px]'>{agent.name}</span>
-
-          {/* Badge container with the gradient and glow */}
-          {tier && (
-            <div className={`scale-95 flex items-center justify-center px-2.5 py-1.5 bg-linear-to-r ${tier.gradient} ${tier.glow} [clip-path:polygon(50%_0%,100%_12%,100%_67%,50%_100%,0%_67%,0%_12%)]`}>
-              <span className={`text-[12px] font-black uppercase tracking-wider ${tier.text}`}>
-                {tier.label}
-              </span>
-            </div>
-          )}
-        </div>
-
-        <div className="text-center font-mono text-[12px] opacity-80">
-          {formatMinutes(Number(agent.callingTime))}
-        </div>
-
-        <div className="flex items-center justify-center gap-1 font-bold text-sm">
-          {agent.seeds}
-          <span className="text-[12px]">🍃</span>
-        </div>
-
-        <div className={`text-center font-black ${agent.sales > 0 ? 'text-green-500' : 'opacity-30'}`}>
-          {agent.sales}
+      <div className="flex justify-center items-center">
+        <div className={`w-8 h-8 bg-gray-500/20 rounded-full flex items-center justify-center text-[10px] relative overflow-hidden`}>
+          <Image 
+            src={agent.profileImg || "/icons-agent-dashboard/profile.png"} 
+            alt={ agent.name } 
+            fill 
+            className="object-contain"
+          />
         </div>
       </div>
-    </>
+
+      {/* Name remains clean */}
+      <div className={`h-full flex items-center justify-between px-3 truncate border-r border-l ${borderColor} ${getLevelColor(agent.currentLevel, isDark)}`}>
+        <span className='font-semibold text-[18px]'>{agent.name}</span>
+
+        {/* Badge container with the gradient and glow */}
+        {tier && (
+          <div className={`scale-95 flex items-center justify-center px-2.5 py-1.5 bg-linear-to-r ${tier.gradient} ${tier.glow} [clip-path:polygon(50%_0%,100%_12%,100%_67%,50%_100%,0%_67%,0%_12%)]`}>
+            <span className={`text-[12px] font-black uppercase tracking-wider ${tier.text}`}>
+              {tier.label}
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="text-center font-mono text-[12px] opacity-80">
+        {formatMinutes(Number(agent.callingTime))}
+      </div>
+
+      <div className="flex items-center justify-center gap-1 font-bold text-sm">
+        {agent.seeds}
+        <span className="text-[12px]">🍃</span>
+      </div>
+
+      <div className={`text-center font-black ${agent.sales > 0 ? 'text-green-500' : 'opacity-30'}`}>
+        {agent.sales}
+      </div>
+    </motion.div>
   );
 }
 
