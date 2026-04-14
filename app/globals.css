@@ -29,9 +29,9 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* In your index.css or a CSS module */
+
 .thin-scrollbar::-webkit-scrollbar {
-  width: 0.2px; /* Adjust this for thickness */
+  display: none; /* Hides scrollbar in Chrome, Safari, Edge */
 }
 
 .thin-scrollbar::-webkit-scrollbar-track {
@@ -50,12 +50,23 @@ body {
 
 /* For Firefox */
 .thin-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: #eee transparent;
+  -ms-overflow-style: none;  /* Hides scrollbar in IE and Edge Legacy */
+  scrollbar-width: none;     /* Hides scrollbar in Firefox */
 }
 
 /* For Firefox */
 .thin-scrollbar-dark {
   scrollbar-width: thin;
   scrollbar-color: #222 transparent;
+}
+
+
+
+.thin-scrollbar-dark::-webkit-scrollbar {
+  display: none; /* Hides scrollbar in Chrome, Safari, Edge */
+}
+
+.thin-scrollbar-dark {
+  -ms-overflow-style: none;  /* Hides scrollbar in IE and Edge Legacy */
+  scrollbar-width: none;     /* Hides scrollbar in Firefox */
 }

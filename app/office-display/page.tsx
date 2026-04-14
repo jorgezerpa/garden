@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { useTheme } from 'next-themes'
 import { getAgentsPositions, getTeamHeat } from '@/apiHandlers/officeDisplay';
 import { calculateMondayOfTheWeek, calculateSundayOfTheWeek, formatMinutes, getCurrentDay, getUTCISOStringEndOfDay, getUTCISOStringStartOfDay } from '@/utils/Date';
+import { FaArrowDown, FaArrowUp, FaEquals } from 'react-icons/fa';
+import { GoDotFill } from 'react-icons/go';
 
 // 1. Updated Interface
 interface AgentData {
@@ -17,6 +19,7 @@ interface AgentData {
   averageScore: number;
   isOnFire?: boolean;
   profileImg?: string;
+  direction: "asc"|"desc"|"static"
 }
 
 
@@ -172,7 +175,7 @@ export default function OfficeDisplay() {
         
         {/* LEFT COLUMN: WEEKLY */}
         <div className="col-span-4 flex flex-col items-center">
-          <h2 className="text-xl font-bold mb-6 italic tracking-tight uppercase">Weekly Leaderboard</h2>
+          <h2 className="text-xl font-bold mb-6 italic tracking-tight uppercase border-b-4 border-[#FA4202]">Weekly Leaderboard</h2>
           <div className="w-full space-y-1">
             <HeaderRow />
             <div className={`max-h-[80vh] overflow-y-scroll ${theme=="dark" ? "thin-scrollbar-dark" : "thin-scrollbar"}`}>
@@ -192,7 +195,7 @@ export default function OfficeDisplay() {
             <EventNotification event={activeEvent} isDark={theme === 'dark'}/>
           ) : (
             /* Idle state: Show a subtle goal progress or placeholder */
-            <div className={`w-full h-64 border-2 border-dashed ${borderColor} rounded-2xl flex items-center justify-center flex-col opacity-40`}>
+            <div className={`w-full h-64 border-2 border-dashed dark:border-zinc-800 border-zinc-100 rounded-2xl flex items-center justify-center flex-col opacity-40`}>
                <p className={textMuted}>Listening for achievements...</p>
             </div>
           )}
@@ -203,7 +206,7 @@ export default function OfficeDisplay() {
 
         {/* RIGHT COLUMN: LIVE DAILY */}
         <div className="col-span-4 flex flex-col items-center">
-          <h2 className="text-xl font-bold mb-6 italic tracking-tight uppercase">Live Daily</h2>
+          <h2 className="text-xl font-bold mb-6 italic tracking-tight uppercase border-b-4 border-[#FA4202]">Live Daily</h2>
           <div className="w-full space-y-1">
             <HeaderRow />
             <div className={`max-h-[80vh] overflow-y-scroll ${theme=="dark" ? "thin-scrollbar-dark" : "thin-scrollbar"}`}>
@@ -234,24 +237,58 @@ export default function OfficeDisplay() {
 }
 
 function HeaderRow() {
-  const labelStyle = "text-[10px] uppercase font-bold text-gray-500 text-center px-1";
+  const labelStyle = "text-[12px] uppercase font-bold text-gray-500 text-center px-1";
+  
   return (
-    <div className="grid grid-cols-[20px_40px_1fr_90px_45px_45px] px-2 mb-2">
-      <div className={labelStyle}></div>
-      <div className={labelStyle}>(pic)</div>
-      <div className={`${labelStyle} text-left`}>Name</div>
-      <div className={labelStyle}>Calling</div>
-      <div className={labelStyle}>Seeds</div>
-      <div className={labelStyle}>Deals</div>
-    </div>
+    <>
+      <div className="grid grid-cols-[40px_40px_1fr_90px_45px_45px] px-2 mb-1">
+        <div className={labelStyle}></div>
+        <div className={labelStyle}>(pic)</div>
+        <div className={`${labelStyle} text-left`}>Name</div>
+        <div className={labelStyle}>Calling</div>
+        <div className={labelStyle}>Seeds</div>
+        <div className={labelStyle}>Deals</div>
+      </div>
+      {/* <div className='border-b-4 dark:border-b-2 border-[#FA4202] mx-2.5'></div> */}
+    </>
   );
 }
 
-function AgentRow({ agent, isDark, index }: { agent: AgentData, isDark: boolean, isDaily?: boolean, index:number }) {
+// Inside AgentRow component
+const getTierConfig = (level: number, dark: boolean) => {
+  switch(level) {
+    case 3: // Gold (Tier 3)
+      return { 
+        gradient: dark ? 'from-amber-300 to-amber-600' : 'from-amber-400 to-amber-700',
+        text: 'text-amber-100', // Text color inside glowing name plate
+        glow: 'shadow-[0_0_15px_3px_rgba(251,191,36,0.3)]', // Sublte gold glow
+        label: 'G' 
+      };
+    case 2: // Silver (Tier 2)
+      return { 
+        gradient: dark ? 'from-slate-300 to-slate-500' : 'from-slate-400 to-slate-600',
+        text: 'text-slate-100',
+        glow: 'shadow-[0_0_15px_3px_rgba(192,192,192,0.3)]', // Subtle silver glow
+        label: 'S'
+      };
+    case 1: // Bronze (Tier 1)
+      return { 
+        gradient: dark ? 'from-orange-300 to-orange-600' : 'from-orange-400 to-orange-700',
+        text: 'text-orange-100',
+        glow: 'shadow-[0_0_15px_3px_rgba(179,153,33,0.3)]', // Subtle bronze glow
+        label: 'B'
+      };
+    default:
+      return null; // For general rows
+  }
+};
+
+function AgentRow({ agent, isDark, index, isDaily }: { agent: AgentData, isDark: boolean, isDaily?: boolean, index:number }) {
   const rowBg = isDark ? 'bg-zinc-900/40' : 'bg-white shadow-sm';
   const borderColor = isDark ? 'border-zinc-800' : 'border-zinc-100';
 
-  // 2. Helper to get subtle level-based colors
+  const tier = getTierConfig(agent.currentLevel, isDark);
+
   const getLevelColor = (level: number, dark: boolean) => {
     switch(level) {
       case 3: // Gold
@@ -265,57 +302,55 @@ function AgentRow({ agent, isDark, index }: { agent: AgentData, isDark: boolean,
     }
   };
 
-  // const getLevelBorderColor = (level: number, dark: boolean) => {
-  //   switch(level) {
-  //     case 3: // Gold
-  //       return dark ? 'border-2 border-amber-200' : 'border-2 border-amber-900';
-  //     case 2: // Silver
-  //       return dark ? 'border-2 border-slate-200' : 'border-2 border-slate-700';
-  //     case 1: // Bronze
-  //       return dark ? 'border-2 border-orange-200' : 'border-2 border-orange-900';
-  //     default:
-  //       return dark ? '' : '';
-  //   }
-  // };
-
   return (
-    <div className={`grid grid-cols-[20px_40px_1fr_90px_45px_45px] items-center border ${borderColor} ${rowBg} rounded-lg overflow-hidden h-10 transition-colors`}>
-      <div className={`pl-1 h-full flex items-center font-bold text-xs truncate border-r border-l ${borderColor}`}>
-        {index+1}
-      </div>
-      
-      <div className="flex justify-center items-center">
-        <div className={`w-8 h-8 bg-gray-500/20 rounded-full flex items-center justify-center text-[10px] relative overflow-hidden`}>
-          <Image 
-            src={agent.profileImg || "/icons-agent-dashboard/profile.png"} 
-            alt={ agent.name } 
-            fill 
-            className="object-contain"
-          />
+    <>
+      <div className={`grid grid-cols-[40px_40px_1fr_90px_45px_45px] items-center border ${borderColor} ${rowBg} rounded-lg overflow-hidden h-10 transition-colors`}>
+        <div className={`pl-1 h-full flex items-center font-bold text-sm truncate border-r border-l ${borderColor}`}>
+          {(isDaily && agent.direction === "asc") && <FaArrowUp size={12} color='#0f0' />}
+          {(isDaily && agent.direction === "desc") && <FaArrowDown size={12} color='#f00'/>}
+          {(isDaily && agent.direction === "static") && <GoDotFill size={12} color={isDark?'#fff':"#000"}/>}
+          {index+1}
+        </div>
+        
+        <div className="flex justify-center items-center">
+          <div className={`w-8 h-8 bg-gray-500/20 rounded-full flex items-center justify-center text-[10px] relative overflow-hidden`}>
+            <Image 
+              src={agent.profileImg || "/icons-agent-dashboard/profile.png"} 
+              alt={ agent.name } 
+              fill 
+              className="object-contain"
+            />
+          </div>
+        </div>
+
+        {/* Name remains clean */}
+        <div className={`h-full flex items-center justify-between px-3 truncate border-r border-l ${borderColor} ${getLevelColor(agent.currentLevel, isDark)}`}>
+          <span className='font-semibold text-[18px]'>{agent.name}</span>
+
+          {/* Badge container with the gradient and glow */}
+          {tier && (
+            <div className={`scale-95 flex items-center justify-center px-2.5 py-1.5 bg-linear-to-r ${tier.gradient} ${tier.glow} [clip-path:polygon(50%_0%,100%_12%,100%_67%,50%_100%,0%_67%,0%_12%)]`}>
+              <span className={`text-[12px] font-black uppercase tracking-wider ${tier.text}`}>
+                {tier.label}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="text-center font-mono text-[12px] opacity-80">
+          {formatMinutes(Number(agent.callingTime))}
+        </div>
+
+        <div className="flex items-center justify-center gap-1 font-bold text-sm">
+          {agent.seeds}
+          <span className="text-[12px]">🍃</span>
+        </div>
+
+        <div className={`text-center font-black ${agent.sales > 0 ? 'text-green-500' : 'opacity-30'}`}>
+          {agent.sales}
         </div>
       </div>
-
-      {/* Name with Level-based highlight */}
-      <div className={`h-full flex items-center justify-between px-3 font-bold text-xs truncate ${getLevelColor(agent.currentLevel, isDark)} border-r border-l ${borderColor}`}>
-        <span>{agent.name}</span>
-        {agent.currentLevel === 1 && <div className={`w-5 h-5 overflow-hidden flex justify-center items-end relative`}><Image src={"/icons-agent-dashboard/gold-medal1.png"} alt={ "medal" } width={10} height={10} className="w-6 h-6"/></div>}
-        {agent.currentLevel === 2 && <div className={`w-5 h-5 overflow-hidden flex justify-center items-end relative`}><Image src={"/icons-agent-dashboard/silver-medal1.png"} alt={ "medal" } width={10} height={10} className="w-6 h-6"/></div>}
-        {agent.currentLevel === 3 && <div className={`w-5 h-5 overflow-hidden flex justify-center items-end relative opacity-60`}><Image src={"/icons-agent-dashboard/bronze-medal1.png"} alt={ "medal" } width={10} height={10} className="w-6 h-6"/></div>}
-      </div>
-
-      <div className="text-center font-mono text-[12px] opacity-80">
-        {formatMinutes(Number(agent.callingTime))}
-      </div>
-
-      <div className="flex items-center justify-center gap-1 font-bold text-sm">
-        {agent.seeds}
-        <span className="text-[12px]">🍃</span>
-      </div>
-
-      <div className={`text-center font-black ${agent.sales > 0 ? 'text-green-500' : 'opacity-30'}`}>
-        {agent.sales}
-      </div>
-    </div>
+    </>
   );
 }
 
@@ -339,12 +374,13 @@ const HeatMeter: React.FC<HeatMeterProps> = ({ score, isDark }) => {
 
   // Configuration for levels
   const getLevelConfig = (val: number) => {
-    if (val <= 20) return { color: '#3b82f6', label: 'Ice Cold', icon: '❄️' };
-    if (val <= 40) return { color: '#06b6d4', label: 'Cooling', icon: '🌬️' };
+    if (val <= 20) return { color: '#ef4444', label: 'Ice Cold', icon: '❄️' };
+    if (val <= 40) return { color: '#f97316', label: 'Cooling', icon: '🌬️' };
     if (val <= 60) return { color: '#eab308', label: 'Warming Up', icon: '☀️' };
-    if (val <= 80) return { color: '#f97316', label: 'Heating Up', icon: '✨' };
-    return { color: '#ef4444', label: 'ON FIRE', icon: '🔥' };
+    if (val <= 80) return { color: '#84aa16', label: 'Heating Up', icon: '✨' };
+    return { color: '#22c55e', label: 'ON FIRE', icon: '🔥' };
   };
+
 
   const { color, label, icon } = getLevelConfig(normalizedScore);
 

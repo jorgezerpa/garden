@@ -1,0 +1,1 @@
+- bg colors of row are to much mixed with brand red. Also is not very informative about the state and the bages makes the same function. So I removed them to make the UI cleaner
