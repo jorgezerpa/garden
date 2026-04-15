@@ -8,10 +8,10 @@ const officeDisplayClient = axios.create({
 
 
 // GET /api/datavis/get-agents-comparisson
-export const getAgentsPositions = async (from: string, to: string) => {
+export const getAgentsPositions = async (date: string, timegap: "daily"|"weekly") => {
   const response = await officeDisplayClient.get('/get_agents_positions', {
     ...getAuthHeader(),
-    params: { from, to, page:1, pageSize:50 },
+    params: { date, timegap, page:1, pageSize:50 },
   });
   return response.data?.data || []
 };

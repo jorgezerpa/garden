@@ -26,6 +26,7 @@ interface AgentData {
 
 export default function OfficeDisplay() {
   const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false);
   const [weeklyData, setWeeklyData] = useState<AgentData[]>([]);
   const [dailyData, setDailyData] = useState<AgentData[]>([]);
   const [teamHeat, setTeamHeat] = useState<number>(0)
@@ -46,6 +47,7 @@ export default function OfficeDisplay() {
 
   useEffect(() => {
     // Initial data fetching 
+    setMounted(true)
     fetchData();
 
     // Get token from localStorage just like in your Axios utility
@@ -61,7 +63,6 @@ export default function OfficeDisplay() {
     es.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'WEBHOOK_TRIGGERED') {
-        console.log("a")
         let event:EventData["type"] | null = null
         if(data.performanceNotifications.seed) event = "seed"
         if(data.performanceNotifications.sale) event = "sale"
@@ -133,24 +134,65 @@ export default function OfficeDisplay() {
   //   return () => clearInterval(interval);
   // }, []); 
 
-  const fetchData = async() => { 
-    try {
-      const today = getCurrentDay() // yyyy-mm-dd
-      const startOfTheWeek = calculateMondayOfTheWeek(today)
-      const endOfTheWeek = calculateSundayOfTheWeek(today)
-      const responseToday =  await getAgentsPositions(getUTCISOStringStartOfDay(today), getUTCISOStringEndOfDay(today))
-      const responseWeek =  await getAgentsPositions(getUTCISOStringStartOfDay(startOfTheWeek), getUTCISOStringEndOfDay(endOfTheWeek))
-      const heatResponse = await getTeamHeat(today)
-      setWeeklyData(responseWeek)      
-      setDailyData(responseToday)
-      setTeamHeat(heatResponse.heatScore)
-    } catch (error) {
-      setWeeklyData([])      
-      setDailyData([])
-      setTeamHeat(0)
-    }
-  }
 
+  const fetchData = async () => {
+    try {
+      const today = getCurrentDay(); // yyyy-mm-dd
+      
+      // Fetching all data in parallel for better performance
+      const [responseToday, responseWeek, heatResponse] = await Promise.all([
+        getAgentsPositions(today, "daily"),
+        getAgentsPositions(today, "weekly"),
+        getTeamHeat(today)
+      ]);
+
+      // Helper to calculate direction based on index changes
+      const computeDirection = (newList: any[], oldList: AgentData[]) => {
+      // 1. Initial Load: Everyone starts as static
+      if (oldList.length === 0) {
+        return newList.map(agent => ({ ...agent, direction: "static" }));
+      }
+
+      return newList.map((agent, newIndex) => {
+        const prevAgent = oldList.find(p => p.id === agent.id);
+        const oldIndex = oldList.findIndex(p => p.id === agent.id);
+
+        let direction: "asc" | "desc" | "static" = "static";
+
+        if (oldIndex !== -1 && prevAgent) {
+          if (newIndex < oldIndex) {
+            // User climbed the ranks
+            direction = "asc";
+          } else if (newIndex > oldIndex) {
+            // User dropped down
+            direction = "desc";
+          } else {
+            // Position is the same, PERSIST the previous arrow/state
+            // If they were 'asc', they stay 'asc' until they drop.
+            direction = prevAgent.direction;
+          }
+        }
+
+        return { ...agent, direction };
+      });
+    };
+
+      // Update states using the functional update pattern
+      setDailyData(prevDaily => computeDirection(responseToday, prevDaily));
+      setWeeklyData(prevWeekly => computeDirection(responseWeek, prevWeekly));
+      setTeamHeat(heatResponse.heatScore);
+
+    } catch (error) {
+      console.error("Error fetching leaderboard data:", error);
+      setWeeklyData([]);
+      setDailyData([]);
+      setTeamHeat(0);
+    }
+  };
+
+  if (!mounted) {
+    return <div className="min-h-screen bg-slate-50 dark:bg-[#121212]" />;
+  }
 
   return (
     <div className={`min-h-screen w-full ${bgMain} ${textMain} p-8 font-sans transition-colors duration-300`}>
@@ -301,9 +343,9 @@ function AgentRow({ agent, isDark, index, isDaily }: { agent: AgentData, isDark:
       className={`grid grid-cols-[40px_40px_1fr_90px_45px_45px] items-center border ${borderColor} ${rowBg} rounded-lg overflow-hidden h-10 transition-colors`}
     >
       <div className={`pl-1 h-full flex items-center font-bold text-sm truncate border-r border-l ${borderColor}`}>
-        {(isDaily && agent.direction === "asc") && <FaArrowUp size={12} color='#0f0' />}
-        {(isDaily && agent.direction === "desc") && <FaArrowDown size={12} color='#f00'/>}
-        {(isDaily && agent.direction === "static") && <GoDotFill size={12} color={isDark?'#fff':"#000"}/>}
+        {(agent.direction === "asc") && <FaArrowUp size={12} color='#0f0' />}
+        {(agent.direction === "desc") && <FaArrowDown size={12} color='#f00'/>}
+        {(agent.direction === "static") && <GoDotFill size={12} color={"transparent"}/>}
         {index+1}
       </div>
         
