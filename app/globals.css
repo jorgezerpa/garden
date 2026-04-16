@@ -14,6 +14,20 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --animate-displacement1: displacementDownUp 10s linear infinite;
+  --animate-displacement2: displacementDownUp 10s linear 5s infinite;
+  
+  @keyframes displacementDownUp {
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform:translateY(50vh);
+    }
+  }
+
 }
 
 @media (prefers-color-scheme: dark) {
@@ -70,3 +84,6 @@ body {
   -ms-overflow-style: none;  /* Hides scrollbar in IE and Edge Legacy */
   scrollbar-width: none;     /* Hides scrollbar in Firefox */
 }
+
+
+

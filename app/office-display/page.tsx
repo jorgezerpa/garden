@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useTheme } from 'next-themes'
 import { getAgentsPositions, getTeamHeat } from '@/apiHandlers/officeDisplay';
 import { calculateMondayOfTheWeek, calculateSundayOfTheWeek, formatMinutes, getCurrentDay, getUTCISOStringEndOfDay, getUTCISOStringStartOfDay } from '@/utils/Date';
-import { FaArrowDown, FaArrowUp, FaEquals } from 'react-icons/fa';
+import { FaArrowDown, FaArrowUp, FaEquals, FaLeaf } from 'react-icons/fa';
 import { GoDotFill } from 'react-icons/go';
 import { motion } from 'framer-motion';
 
@@ -22,7 +22,6 @@ interface AgentData {
   profileImg?: string;
   direction: "asc"|"desc"|"static"
 }
-
 
 export default function OfficeDisplay() {
   const { theme, setTheme } = useTheme()
@@ -42,8 +41,6 @@ export default function OfficeDisplay() {
   const borderColor = theme === 'dark' ? 'border-gray-700' : 'border-gray-200';
 
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
-
-
 
   useEffect(() => {
     // Initial data fetching 
@@ -196,6 +193,12 @@ export default function OfficeDisplay() {
 
   return (
     <div className={`min-h-screen w-full ${bgMain} ${textMain} p-8 font-sans transition-colors duration-300`}>
+      
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-20 w-96 h-96 dark:bg-blue-500/25 bg-blue-500/35 rounded-full blur-3xl animate-displacement1 origin-top" />
+        <div className="absolute top-20 right-20 w-96 h-96 dark:bg-amber-500/25 bg-amber-500/35 rounded-full blur-3xl animate-displacement2 origin-bottom" />
+      </div>
+
       <div className="max-w-[1600px] mx-auto grid grid-cols-12 gap-8 h-full">
         
         {/* LEFT COLUMN: WEEKLY */}
@@ -212,16 +215,16 @@ export default function OfficeDisplay() {
         </div>
 
         {/* CENTER COLUMN: HEATMETER & ANIMATION */}
-        <div className="col-span-4 flex flex-col items-center justify-start pt-10">
+        <div className="col-span-4 flex flex-col items-center justify-start pt-6">
           <HeatMeter score={teamHeat} isDark={theme==="dark"} />
           
-        <div className="mt-20 w-full min-h-64">
+        <div className="relative mt-20 w-full min-h-64">
           {showEvent && activeEvent ? (
             <EventNotification event={activeEvent} isDark={theme === 'dark'}/>
           ) : (
-            /* Idle state: Show a subtle goal progress or placeholder */
-            <div className={`w-full h-64 border-2 border-dashed dark:border-zinc-800 border-zinc-100 rounded-2xl flex items-center justify-center flex-col opacity-40`}>
-               <p className={textMuted}>Listening for achievements...</p>
+            <div className={`animate-[pulse_3s_ease-in-out_infinite] w-full h-64 border-2 border-dashed dark:border-zinc-600 border-zinc-300 rounded-2xl flex items-center justify-center flex-col`}>
+              {/* <div className={`absolute w-24 h-24 border border-dashed dark:border-white border-gray-600 rounded-full animate-[ping_3s_ease-in-out_infinite]`} /> */}
+              <p className={`${textMuted} opacity-70`}>Listening for achievements...</p>
             </div>
           )}
         </div>
@@ -279,32 +282,32 @@ function HeaderRow() {
   );
 }
 
-// Inside AgentRow component
+// Inside AgentRow component - Updated for Modern Distinct Colors
 const getTierConfig = (level: number, dark: boolean) => {
   switch(level) {
     case 3: // Gold (Tier 3)
       return { 
-        gradient: dark ? 'from-amber-300 to-amber-600' : 'from-amber-400 to-amber-700',
-        text: 'text-amber-100', // Text color inside glowing name plate
-        glow: 'shadow-[0_0_15px_3px_rgba(251,191,36,0.3)]', // Sublte gold glow
+        gradient: dark ? 'from-[#FFE600] via-[#FBB117] to-[#D4AF37]' : 'from-[#FFF700] via-[#FFD700] to-[#DAA520]',
+        text: 'text-yellow-950 dark:text-yellow-950', 
+        glow: 'drop-shadow-[0_0_8px_rgba(255,215,0,0.6)]',
         label: 'G' 
       };
     case 2: // Silver (Tier 2)
       return { 
-        gradient: dark ? 'from-slate-300 to-slate-500' : 'from-slate-400 to-slate-600',
-        text: 'text-slate-100',
-        glow: 'shadow-[0_0_15px_3px_rgba(192,192,192,0.3)]', // Subtle silver glow
+        gradient: dark ? 'from-[#FFFFFF] via-[#E0E0E0] to-[#A0A0A0]' : 'from-[#FFFFFF] via-[#D3D3D3] to-[#A9A9A9]',
+        text: 'text-slate-900',
+        glow: 'drop-shadow-[0_0_8px_rgba(192,192,192,0.6)]',
         label: 'S'
       };
-    case 1: // Bronze (Tier 1)
+    case 1: // Bronze (Tier 1) - Made significantly darker/copper to differentiate from Gold
       return { 
-        gradient: dark ? 'from-orange-300 to-orange-600' : 'from-orange-400 to-orange-700',
-        text: 'text-orange-100',
-        glow: 'shadow-[0_0_15px_3px_rgba(179,153,33,0.3)]', // Subtle bronze glow
+        gradient: dark ? 'from-[#E3A857] via-[#CD7F32] to-[#8B4513]' : 'from-[#F4A460] via-[#D2691E] to-[#8B4513]',
+        text: 'text-orange-950 dark:text-orange-950',
+        glow: 'drop-shadow-[0_0_8px_rgba(205,127,50,0.6)]', 
         label: 'B'
       };
     default:
-      return null; // For general rows
+      return null; 
   }
 };
 
@@ -314,31 +317,42 @@ function AgentRow({ agent, isDark, index, isDaily }: { agent: AgentData, isDark:
 
   const tier = getTierConfig(agent.currentLevel, isDark);
 
-  const getLevelColor = (level: number, dark: boolean) => {
+const getLevelColor = (level: number, dark: boolean) => {
+  // Base glass effect: Blur + faint border + internal highlight
+  const baseGlass = "backdrop-blur-md border border-white/5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]";
+  
+  if (!dark) {
+    // Keeping your "exquisite" light mode classes as they were
     switch(level) {
-      case 3: // Gold
-        return dark ? 'bg-[rgba(204,142,52,.3)]' : 'bg-amber-100/60';
-      case 2: // Silver
-        return dark ? 'bg-[rgba(192,192,192,.3)]' : 'bg-slate-100/80';
-      case 1: // Bronze
-        return dark ? 'bg-[rgba(179,153,33,.4)]' : 'bg-orange-50/80';
-      default:
-        return dark ? 'bg-zinc-800' : 'bg-zinc-50';
+      case 3: return `bg-amber-100/60 ${baseGlass.replace('border-white/5', 'border-amber-200/50')}`;
+      case 2: return `bg-slate-100/80 ${baseGlass.replace('border-white/5', 'border-slate-300/50')}`;
+      case 1: return `bg-orange-50/80 ${baseGlass.replace('border-white/5', 'border-orange-200/50')}`;
+      default: return 'bg-zinc-50';
     }
-  };
+  }
+
+  // Refined Dark Mode: Deeper, richer metallic glass
+  switch(level) {
+    case 3: // Gold: Deep Amber/Bronze-Gold mix
+      return `bg-gradient-to-r from-amber-900/40 via-amber-700/20 to-amber-900/40 ${baseGlass}`;
+    case 2: // Silver: Cool, steely grey
+      return `bg-gradient-to-r from-slate-700/40 via-slate-600/20 to-slate-700/40 ${baseGlass}`;
+    case 1: // Bronze: Rich copper-brown
+      return `bg-gradient-to-r from-orange-950/50 via-orange-800/20 to-orange-950/50 ${baseGlass}`;
+    default:
+      return 'bg-zinc-800/40 backdrop-blur-sm';
+  }
+};
 
   return (
-    // Replaced the empty fragment with motion.div
     <motion.div 
-      layout // 🪄 This single prop tells Framer Motion to animate positional changes
-      initial={{ opacity: 0, scale: 0.9 }} // Optional: Animation when they first appear on the board
+      layout 
+      initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ 
         type: "spring", 
-        // stiffness: 350, 
-        // damping: 25 // Adjust these to make the movement more bouncy or rigid
-        stiffness: 200, // Lower is slower (default is around 500)
-        damping: 10     // Higher means less bounce/wobble
+        stiffness: 200,
+        damping: 10
       }}
       className={`grid grid-cols-[40px_40px_1fr_90px_45px_45px] items-center border ${borderColor} ${rowBg} rounded-lg overflow-hidden h-10 transition-colors`}
     >
@@ -360,14 +374,15 @@ function AgentRow({ agent, isDark, index, isDaily }: { agent: AgentData, isDark:
         </div>
       </div>
 
-      {/* Name remains clean */}
+      {/* Name and Modern Shield Badge */}
       <div className={`h-full flex items-center justify-between px-3 truncate border-r border-l ${borderColor} ${getLevelColor(agent.currentLevel, isDark)}`}>
         <span className='font-semibold text-[18px]'>{agent.name}</span>
 
-        {/* Badge container with the gradient and glow */}
         {tier && (
-          <div className={`scale-95 flex items-center justify-center px-2.5 py-1.5 bg-linear-to-r ${tier.gradient} ${tier.glow} [clip-path:polygon(50%_0%,100%_12%,100%_67%,50%_100%,0%_67%,0%_12%)]`}>
-            <span className={`text-[12px] font-black uppercase tracking-wider ${tier.text}`}>
+          <div className={`relative flex items-center justify-center w-[26px] h-[30px] bg-gradient-to-b ${tier.gradient} ${tier.glow} [clip-path:polygon(50%_0%,100%_15%,100%_75%,50%_100%,0%_75%,0%_15%)]`}>
+            {/* Inner bevel overlay for modern glass/metallic touch */}
+            <div className="absolute inset-[1.5px] bg-gradient-to-br from-white/40 to-transparent [clip-path:polygon(50%_0%,100%_15%,100%_75%,50%_100%,0%_75%,0%_15%)]" />
+            <span className={`text-[13px] font-black uppercase tracking-wider ${tier.text} z-10`}>
               {tier.label}
             </span>
           </div>
@@ -378,9 +393,10 @@ function AgentRow({ agent, isDark, index, isDaily }: { agent: AgentData, isDark:
         {formatMinutes(Number(agent.callingTime))}
       </div>
 
-      <div className="flex items-center justify-center gap-1 font-bold text-sm">
+      <div className="flex items-center justify-center gap-1.5 font-bold text-sm">
         {agent.seeds}
-        <span className="text-[12px]">🍃</span>
+        {/* Minimalist Modern Seed - Pure CSS geometric teardrop */}
+        <FaLeaf size={12} color='#49B986' />
       </div>
 
       <div className={`text-center font-black ${agent.sales > 0 ? 'text-green-500' : 'opacity-30'}`}>
@@ -389,8 +405,6 @@ function AgentRow({ agent, isDark, index, isDaily }: { agent: AgentData, isDark:
     </motion.div>
   );
 }
-
-
 
 interface HeatMeterProps {
   score: number;
@@ -401,9 +415,9 @@ const HeatMeter: React.FC<HeatMeterProps> = ({ score, isDark }) => {
   // Clamp score between 0 and 100
   const normalizedScore = Math.min(Math.max(score, 0), 100);
   
-  // Circular Constants
-  const radius = 175;
-  const stroke = 12;
+  // Increased sizes for greater visibility "heart of scoreboard"
+  const radius = 210; 
+  const stroke = 22; 
   const normalizedRadius = radius - stroke * 2;
   const circumference = normalizedRadius * 2 * Math.PI;
   const strokeDashoffset = circumference - (normalizedScore / 100) * circumference;
@@ -417,17 +431,23 @@ const HeatMeter: React.FC<HeatMeterProps> = ({ score, isDark }) => {
     return { color: '#22c55e', label: 'ON FIRE', icon: '🔥' };
   };
 
-
   const { color, label, icon } = getLevelConfig(normalizedScore);
 
   return (
-    <div className="relative flex items-center justify-center">
+    <div className="relative flex items-center justify-center mt-4">
       {/* SVG Circle */}
       <svg
         height={radius * 2}
         width={radius * 2}
-        className="transform rotate-90 transition-all duration-1000 ease-out"
+        className="transform rotate-90 transition-all duration-1000 ease-out drop-shadow-xl"
       >
+        <defs>
+          <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="8" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
         {/* Background Track */}
         <circle
           stroke={isDark ? '#27272a' : '#e4e4e7'}
@@ -437,7 +457,7 @@ const HeatMeter: React.FC<HeatMeterProps> = ({ score, isDark }) => {
           cx={radius}
           cy={radius}
         />
-        {/* Progress Bar */}
+        {/* Progress Bar with Glow */}
         <circle
           stroke={color}
           fill="transparent"
@@ -449,19 +469,21 @@ const HeatMeter: React.FC<HeatMeterProps> = ({ score, isDark }) => {
           cx={radius}
           cy={radius}
           className="transition-all duration-1000 ease-out"
+          filter="url(#glow)"
         />
       </svg>
 
       {/* Center Content */}
       <div className="absolute flex flex-col items-center justify-center text-center">
-        <span className="text-4xl mb-1 animate-bounce" style={{ animationDuration: '3s' }}>
+        <span className="text-6xl mb-2 animate-bounce drop-shadow-sm" style={{ animationDuration: '3s' }}>
           {icon}
         </span>
-        <span className={`text-5xl font-black tracking-tighter ${isDark ? 'text-white' : 'text-gray-900'}`}>
+        {/* Scaled up the typography heavily here */}
+        <span className={`text-[6rem] leading-none font-black tracking-tighter drop-shadow-md ${isDark ? 'text-white' : 'text-gray-900'}`}>
           {normalizedScore}
         </span>
         <span 
-          className="text-[10px] font-bold uppercase tracking-widest mt-1"
+          className="text-sm font-black uppercase tracking-[0.25em] mt-3 drop-shadow-sm"
           style={{ color: color }}
         >
           {label}
@@ -479,9 +501,30 @@ interface EventData {
 }
 
 const EVENT_CONFIG = {
-  onFire: { icon: '🔥', text: 'IS ON FIRE!', color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500' },
-  seed: { icon: '🌱', text: 'MADE A NEW SEED!', color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500' },
-  sale: { icon: "💰", text: 'PERFORMED A SALE!', color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500' },
+  onFire: { 
+    icon: '🔥', 
+    text: 'IS ON FIRE!', 
+    color: 'text-emerald-600 dark:text-emerald-400', // Green for Fire
+    textColor: 'text-zinc-900 dark:text-white',      // High contrast
+    bg: 'bg-emerald-500/20', 
+    border: 'border-emerald-600 dark:border-emerald-400' 
+  },
+  seed: { 
+    icon: '🌱', 
+    text: 'MADE A NEW SEED!', 
+    color: 'text-sky-600 dark:text-sky-400',         // Sky blue
+    textColor: 'text-zinc-900 dark:text-white', 
+    bg: 'bg-sky-500/20', 
+    border: 'border-sky-600 dark:border-sky-400' 
+  },
+  sale: { 
+    icon: "💰", 
+    text: 'PERFORMED A SALE!', 
+    color: 'text-amber-600 dark:text-amber-400',     // Golden amber
+    textColor: 'text-zinc-900 dark:text-white', 
+    bg: 'bg-amber-400/20', 
+    border: 'border-amber-600 dark:border-amber-400' 
+  },
   stoned: { icon: '/icons-agent-dashboard/Stone.png', text: 'OP DE STEEN!', color: 'text-gray-500', bg: 'bg-gray-200/10', border: 'border-gray-500' },
 };
 
