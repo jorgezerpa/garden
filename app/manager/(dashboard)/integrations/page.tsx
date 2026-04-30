@@ -238,7 +238,7 @@ export default function AdminStats() {
             </p>
             <div className="group relative">
               <div className="p-4 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl font-mono text-[11px] text-slate-600 dark:text-slate-400 break-all pr-12">
-                https://[your_public_key]:[your_private_key]@garden-backend-omega.vercel.com/api/leaddesk/webhook
+                https://[your_public_key]:[your_private_key]@garden-api.vercel.app/api/leaddesk/webhook
               </div>
               <button 
                 className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-green-500 transition-colors"
